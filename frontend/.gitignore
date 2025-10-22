@@ -35,9 +35,13 @@ yarn-error.log
 /coverage
 /libpeerconnection.log
 testem.log
-/typings
+/typingsgit 
 __screenshots__/
 
 # System files
 .DS_Store
 Thumbs.db
+
+# Python backend
+/backend/.venv
+/backend/__pycache__/
