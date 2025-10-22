@@ -26,51 +26,66 @@ def read_root():
 
 
 # GET endpoint - retrieve data  ---- trip 
+class Trip(BaseModel):
+    id: str
+    name: str
+    dates: str
+    participants: list[str]
+
 @prefix_router.get("/trips/{trip_id}")
 def get_trip(trip_id: int):
-    return {"trip_id": trip_id, "title": "Sample Trip", "description": "This is a sample trip."}
+    return {"id": trip_id, "name": "Sample Trip"}
 
 @prefix_router.get("/trips/")
 def get_trips():
     return [
-    {"trip_id": 1, "title": "Sample Trip 1", "description": "This is a sample trip. 1"},
-    {"trip_id": 2, "title": "Sample Trip 2", "description": "This is a sample trip. 2"},
-    {"trip_id": 3, "title": "Sample Trip 3", "description": "This is a sample trip. 3"},
-    {"trip_id": 4, "title": "Sample Trip 4", "description": "This is a sample trip. 4"},
-    {"trip_id": 5, "title": "Sample Trip 5", "description": "This is a sample trip. 5"}
+    {"id": 1, "name": "Sample Trip 1"},
+    {"id": 2, "name": "Sample Trip 2"},
+    {"id": 3, "name": "Sample Trip 3"},
+    {"id": 4, "name": "Sample Trip 4"},
+    {"id": 5, "name": "Sample Trip 5"}
     ]
 
 
-class TripCreate(BaseModel):
-    title: str
-    description: str = None
+class TripCreate(BaseModel):   # TODO: maybe add id as optional field later and delete second object TripCreateResponse
+    name: str
     dates: str
     participants: list[str]
 
 class TripCreateResponse(BaseModel):
     trip_id: int
-    title: str
-    description: str = None
+    name: str
     dates: str
     participants: list[str]
 
 
-@prefix_router.post("/trips/create")
-def create_trip(data: TripCreate, response_model=TripCreateResponse, status_code=201):
-    return {"trip_id": 123, "title": data.title, "description": data.description, 'dates': data.dates, 'participants': data.participants}
+@prefix_router.post("/trips", response_model=TripCreateResponse, status_code=201)
+def create_trip(data: TripCreate):
+    return {"tripId": 123, "name": data.name, 'dates': data.dates, 'participants': data.participants}
 
-@prefix_router.get("/expenses/")
-def get_expenses():
+@prefix_router.get("/trips/{trip_id}/expenses")
+def get_expenses(trip_id: int):
     return [
-    {"id": 1,"trip_id": 1, "title": "Sample Expense", "description": "This is a sample trip."}
+    {"id": 1,"tripId": trip_id , "title": "Sample Expense"},
+    {"id": 2,"tripId": trip_id , "title": "Sample Expense 2"}
     ]
 
-class ExpenseCreate(BaseModel):
-    trip_id: int
+class Expense(BaseModel):
+    id: str
+    trip_id: str
     title: str
     amount: float
     paid_by: str
-    participants: list[str]
+    included: list[str]
+    date: str
+
+class ExpenseCreate(BaseModel):   #TODO: same as previous, combine two schemas by id optional
+    trip_id: str
+    title: str
+    amount: float
+    paid_by: str
+    included: list[str]
+    date: str
 
 class ExpenseCreateResponse(BaseModel):
     id: int
@@ -78,17 +93,18 @@ class ExpenseCreateResponse(BaseModel):
     title: str
     amount: float
     paid_by: str
-    participants: list[str]
+    included: list[str]
+    date: str
 
-@prefix_router.post("/expenses/create")
-def create_expense(data: ExpenseCreate, response_model=ExpenseCreateResponse, status_code=201):
+@prefix_router.post("/trips/{trip_id}/expenses", response_model=ExpenseCreateResponse, status_code=201)
+def create_expense(data: ExpenseCreate):
     return {
         'id': 456,
-        'trip_id': data.trip_id,
+        'tripId': data.trip_id,
         'title': data.title,
         'amount': data.amount,
-        'paid_by': data.paid_by,
-        'participants': data.participants
+        'paidBy': data.paid_by,
+        'included': data.included
     }
 
 app.include_router(prefix_router)
