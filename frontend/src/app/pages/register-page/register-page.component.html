@@ -1,0 +1,104 @@
+<div class="auth-container">
+  <div class="brand-section">
+    <div class="logo-container">
+      <img src="./logo.png" alt="TripShare Logo" class="brand-logo" />
+    </div>
+    <h1 class="brand-title">Join TripShare</h1>
+    <p class="brand-subtitle">Create your account and start planning amazing trips with friends</p>
+  </div>
+
+  <mat-card class="auth-card">
+    <mat-card-header class="auth-header">
+      <mat-card-title class="auth-title">Create Account</mat-card-title>
+      <mat-card-subtitle class="auth-subtitle">Fill in the details to get started</mat-card-subtitle>
+    </mat-card-header>
+    
+    <mat-card-content>
+      <form [formGroup]="registerForm" (ngSubmit)="onRegister()" class="auth-form">
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="form-field half-width">
+            <mat-label>First Name</mat-label>
+            <input matInput formControlName="firstName" placeholder="Enter your first name">
+            <mat-icon matSuffix>person</mat-icon>
+            <mat-error *ngIf="registerForm.get('firstName')?.touched && registerForm.get('firstName')?.errors">
+              {{ getErrorMessage('firstName') }}
+            </mat-error>
+          </mat-form-field>
+          
+          <mat-form-field appearance="outline" class="form-field half-width">
+            <mat-label>Last Name</mat-label>
+            <input matInput formControlName="lastName" placeholder="Enter your last name">
+            <mat-icon matSuffix>person</mat-icon>
+            <mat-error *ngIf="registerForm.get('lastName')?.touched && registerForm.get('lastName')?.errors">
+              {{ getErrorMessage('lastName') }}
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Username</mat-label>
+          <input matInput formControlName="username" placeholder="Choose a username">
+          <mat-icon matSuffix>account_circle</mat-icon>
+          <mat-error *ngIf="registerForm.get('username')?.touched && registerForm.get('username')?.errors">
+            {{ getErrorMessage('username') }}
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Email Address</mat-label>
+          <input matInput formControlName="email" type="email" placeholder="Enter your email address">
+          <mat-icon matSuffix>email</mat-icon>
+          <mat-error *ngIf="registerForm.get('email')?.touched && registerForm.get('email')?.errors">
+            {{ getErrorMessage('email') }}
+          </mat-error>
+        </mat-form-field>
+        
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Password</mat-label>
+          <input matInput [type]="hidePassword ? 'password' : 'text'" formControlName="password" placeholder="Create a password">
+          <button mat-icon-button matSuffix (click)="hidePassword = !hidePassword" type="button">
+            <mat-icon>{{hidePassword ? 'visibility_off' : 'visibility'}}</mat-icon>
+          </button>
+          <mat-error *ngIf="registerForm.get('password')?.touched && registerForm.get('password')?.errors">
+            {{ getErrorMessage('password') }}
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Confirm Password</mat-label>
+          <input matInput [type]="hideConfirmPassword ? 'password' : 'text'" formControlName="confirmPassword" placeholder="Confirm your password">
+          <button mat-icon-button matSuffix (click)="hideConfirmPassword = !hideConfirmPassword" type="button">
+            <mat-icon>{{hideConfirmPassword ? 'visibility_off' : 'visibility'}}</mat-icon>
+          </button>
+          <mat-error *ngIf="registerForm.get('confirmPassword')?.touched && (registerForm.get('confirmPassword')?.errors || registerForm.hasError('passwordMismatch'))">
+            {{ getErrorMessage('confirmPassword') }}
+          </mat-error>
+        </mat-form-field>
+
+        <div class="form-options">
+          <mat-checkbox formControlName="agreeToTerms" class="terms-checkbox">
+            I agree to the <a href="#" class="terms-link">Terms of Service</a> and <a href="#" class="terms-link">Privacy Policy</a>
+          </mat-checkbox>
+          <mat-error *ngIf="registerForm.get('agreeToTerms')?.touched && registerForm.get('agreeToTerms')?.errors" class="terms-error">
+            {{ getErrorMessage('agreeToTerms') }}
+          </mat-error>
+        </div>
+        
+        <button mat-raised-button color="primary" type="submit" class="auth-btn" [disabled]="!registerForm.valid || isLoading">
+          <mat-icon *ngIf="isLoading" class="loading-icon">refresh</mat-icon>
+          {{ isLoading ? 'Creating Account...' : 'Create Account' }}
+        </button>
+
+        <div class="auth-divider">
+          <span>or</span>
+        </div>
+
+        <div class="auth-footer">
+          <p>Already have an account? 
+            <a routerLink="/auth/login" class="auth-link">Sign in here</a>
+          </p>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+</div>

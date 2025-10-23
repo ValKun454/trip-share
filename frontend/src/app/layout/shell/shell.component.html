@@ -11,37 +11,37 @@
 
       <div class="nav-container">
         <mat-nav-list class="nav">
-          <a mat-list-item routerLink="/trips" routerLinkActive="active"
+          <a mat-list-item routerLink="/app/trips" routerLinkActive="active"
              *ngIf="!(isHandset$ | async); else tripsMobile">
             <mat-icon matListItemIcon>receipt_long</mat-icon>
             <span matListItemTitle>Trips</span>
           </a>
           <ng-template #tripsMobile>
-            <a mat-list-item routerLink="/trips" routerLinkActive="active" (click)="snav.close()">
+            <a mat-list-item routerLink="/app/trips" routerLinkActive="active" (click)="snav.close()">
               <mat-icon matListItemIcon>receipt_long</mat-icon>
               <span matListItemTitle>Trips</span>
             </a>
           </ng-template>
 
-          <a mat-list-item routerLink="/settings" routerLinkActive="active"
+          <a mat-list-item routerLink="/app/settings" routerLinkActive="active"
              *ngIf="!(isHandset$ | async); else settingsMobile">
             <mat-icon matListItemIcon>settings</mat-icon>
             <span matListItemTitle>Settings</span>
           </a>
           <ng-template #settingsMobile>
-            <a mat-list-item routerLink="/settings" routerLinkActive="active" (click)="snav.close()">
+            <a mat-list-item routerLink="/app/settings" routerLinkActive="active" (click)="snav.close()">
               <mat-icon matListItemIcon>settings</mat-icon>
               <span matListItemTitle>Settings</span>
             </a>
           </ng-template>
           
-          <a mat-list-item routerLink="/contact" routerLinkActive="active"
+          <a mat-list-item routerLink="/app/contact" routerLinkActive="active"
              *ngIf="!(isHandset$ | async); else contactMobile">
             <mat-icon matListItemIcon>contact_mail</mat-icon>
             <span matListItemTitle>Contact Us</span>
           </a>
           <ng-template #contactMobile>
-            <a mat-list-item routerLink="/contact" routerLinkActive="active" (click)="snav.close()">
+            <a mat-list-item routerLink="/app/contact" routerLinkActive="active" (click)="snav.close()">
               <mat-icon matListItemIcon>contact_mail</mat-icon>
               <span matListItemTitle>Contact Us</span>
             </a>
