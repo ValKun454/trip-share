@@ -2,7 +2,9 @@ import { Component, inject } from "@angular/core";
 import { NgFor } from "@angular/common";
 import { MatCardModule } from "@angular/material/card";
 import { MatButtonModule } from "@angular/material/button";
-import { ApiService, Trip } from "../../core/api.service";
+import { ApiService} from "../../core/services/api.service";
+import { GetTrip } from "../../core/models/trip.model";
+
 
 @Component({
   selector: "app-trips-page",
@@ -12,7 +14,7 @@ import { ApiService, Trip } from "../../core/api.service";
   styleUrls: ["./trips-page.component.css"]
 })
 export class TripsPageComponent {
-  trips: Trip[] = [
+  trips: GetTrip[] = [
     { id: "tmp1", name: "Madeira weekend", dates: "12-14 Apr", participants: ["M"] },
   ];
 
