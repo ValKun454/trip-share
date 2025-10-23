@@ -1,7 +1,7 @@
-import { Component, inject } from '@angular/core';
+import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
@@ -34,8 +34,6 @@ export class LoginPageComponent {
   hidePassword = true;
   isLoading = false;
 
-  private router = inject(Router);
-
   constructor(
     private fb: FormBuilder,
     private authService: AuthService
@@ -54,10 +52,7 @@ export class LoginPageComponent {
       this.authService.login(username, password).subscribe({
         next: (success) => {
           this.isLoading = false;
-          if (success) {
-            // Redirect to main app after successful login
-            this.router.navigate(['/app/trips']);
-          } else {
+          if (!success) {
             console.error('Login failed');
             // Here you could show an error message
           }

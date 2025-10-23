@@ -19,20 +19,16 @@ export const routes: Routes = [
       { path: 'register', component: RegisterPageComponent, title: 'Register - TripShare' }
     ]
   },
-  
-  // Redirect root to login initially (can be changed to redirect to trips if user is authenticated)
-  { path: '', redirectTo: '/auth/login', pathMatch: 'full' },
-  
   // Redirect old login/register routes
-  { path: 'login', redirectTo: '/auth/login' },  
+  { path: 'login', redirectTo: '/auth/login' },
   { path: 'register', redirectTo: '/auth/register' },
   
-  // Main application routes (with shell) - moved to separate path
+  // Main application routes (with shell)
   {
-    path: 'app',
+    path: '',
     component: ShellComponent,
     children: [
-      { path: '', redirectTo: 'trips', pathMatch: 'full' },
+      { path: '', pathMatch: 'full', redirectTo: 'trips' },
       { path: 'trips', component: TripsPageComponent, title: 'Trips - TripShare' },
       { path: 'settings', component: SettingsPageComponent, title: 'Settings - TripShare' },
       { path: 'contact', component: ContactUsPageComponent, title: 'Contact Us - TripShare' },

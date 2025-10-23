@@ -10,7 +10,10 @@ export class AuthService {
   isLoggedIn$: Observable<boolean> = this.isLoggedInSubject.asObservable();
 
   constructor() {
-    // Initialize authentication state based on existing token
+    // For demo purposes, auto-login a mock user if no token exists
+    if (!this.hasToken()) {
+      this.setMockUser();
+    }
   }
 
   private setMockUser(): void {
@@ -43,7 +46,7 @@ export class AuthService {
     this.isLoggedInSubject.next(false);
     
     // Navigate to login page
-    this.router.navigate(['/auth/login']);
+    this.router.navigate(['/login']);
   }
 
   getCurrentUser(): any {
