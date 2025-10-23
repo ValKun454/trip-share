@@ -1,0 +1,69 @@
+<mat-sidenav-container class="layout">
+    <mat-sidenav
+      #snav
+      [mode]="(isHandset$ | async) ? 'over' : 'side'"
+      [opened]="!(isHandset$ | async)"
+      class="sidenav"
+    >
+      <mat-toolbar class="sidenav__header">
+        <span class="brand">Trip&Share</span>
+      </mat-toolbar>
+
+      <mat-nav-list class="nav">
+        <a mat-list-item routerLink="/trips" routerLinkActive="active"
+           *ngIf="!(isHandset$ | async); else tripsMobile">
+          <mat-icon matListItemIcon>receipt_long</mat-icon>
+          <span matListItemTitle>Trips</span>
+        </a>
+        <ng-template #tripsMobile>
+          <a mat-list-item routerLink="/trips" routerLinkActive="active" (click)="snav.close()">
+            <mat-icon matListItemIcon>receipt_long</mat-icon>
+            <span matListItemTitle>Trips</span>
+          </a>
+        </ng-template>
+
+        <a mat-list-item routerLink="/settings" routerLinkActive="active"
+           *ngIf="!(isHandset$ | async); else settingsMobile">
+          <mat-icon matListItemIcon>settings</mat-icon>
+          <span matListItemTitle>Settings</span>
+        </a>
+        <ng-template #settingsMobile>
+          <a mat-list-item routerLink="/settings" routerLinkActive="active" (click)="snav.close()">
+            <mat-icon matListItemIcon>settings</mat-icon>
+            <span matListItemTitle>Settings</span>
+          </a>
+        </ng-template>
+
+        <a mat-list-item routerLink="/contact" routerLinkActive="active"
+           *ngIf="!(isHandset$ | async); else contactMobile">
+          <mat-icon matListItemIcon>contact_mail</mat-icon>
+          <span matListItemTitle>Contact Us</span>
+        </a>
+        <ng-template #contactMobile>
+          <a mat-list-item routerLink="/contact" routerLinkActive="active" (click)="snav.close()">
+            <mat-icon matListItemIcon>contact_mail</mat-icon>
+            <span matListItemTitle>Contact Us</span>
+          </a>
+        </ng-template>
+
+      </mat-nav-list>
+    </mat-sidenav>
+
+    <mat-sidenav-content>
+      <mat-toolbar class="topbar">
+        <button mat-icon-button (click)="snav.toggle()" *ngIf="(isHandset$ | async)">
+          <mat-icon>menu</mat-icon>
+        </button>
+        <span class="topbar__title">Trip&Share</span>
+        <span class="spacer"></span>
+        <button mat-flat-button color="primary">
+          <mat-icon>add</mat-icon>
+          Add Expense
+        </button>
+      </mat-toolbar>
+
+      <main class="content">
+        <router-outlet></router-outlet>
+      </main>
+    </mat-sidenav-content>
+  </mat-sidenav-container>
