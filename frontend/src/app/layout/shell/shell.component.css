@@ -21,8 +21,77 @@
     }
     .brand { font-weight: 700; letter-spacing: .3px; }
 
-    .nav a { color: var(--text); }
+    /* Navigation links styling */
+    .nav a { 
+      color: var(--text); 
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
 
+    /* Hover animations for navigation links */
+    .nav a:hover {
+      background-color: color-mix(in srgb, var(--primary) 8%, transparent);
+      transform: translateX(8px);
+    }
+
+    /* Icon hover animation */
+    .nav a:hover .mat-icon {
+      transform: scale(1.1);
+      color: var(--primary);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Text hover animation */
+    .nav a:hover span {
+      color: var(--primary);
+      font-weight: 500;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Active state styling */
+    .nav a.active {
+      background-color: color-mix(in srgb, var(--primary) 12%, transparent);
+      border-right: 3px solid var(--primary);
+    }
+
+    .nav a.active .mat-icon,
+    .nav a.active span {
+      color: var(--primary);
+    }
+
+    /* Ripple effect on hover */
+    .nav a::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, 
+        transparent, 
+        color-mix(in srgb, var(--primary) 15%, transparent), 
+        transparent);
+      transition: left 0.5s ease;
+    }
+
+    .nav a:hover::before {
+      left: 100%;
+    }
+
+    /* Smooth icon transitions */
+    .nav .mat-icon {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Smooth text transitions */
+    .nav span {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .hover-underline {
+      text-decoration: underline;
+    }
     /* gorny pasek — lekki blur, bez przerwy z boku */
     .topbar {
       position: sticky; top: 0; z-index: 10;
@@ -48,4 +117,124 @@
       max-width: 1120px;
       margin: 0 auto;
       color: var(--text);
+    }
+
+    .logo {
+      height: 86px;
+    }
+
+    /* User Section Styles */
+    .user-section {
+      margin-top: auto;
+      padding: 16px;
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      padding: 12px 16px;
+      background: color-mix(in srgb, var(--surface-high) 50%, transparent);
+      border-radius: 8px;
+      margin-bottom: 8px;
+    }
+
+    .user-avatar {
+      font-size: 32px;
+      width: 32px;
+      height: 32px;
+      color: var(--primary);
+      margin-right: 12px;
+    }
+
+    .user-details {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .username {
+      font-weight: 600;
+      color: var(--text);
+      font-size: 0.9rem;
+    }
+
+    .login-time {
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    /* Logout Button Styles - Same as router links */
+    .logout-btn {
+      color: #f44336 !important;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+      border: none;
+      border-radius: 0px;
+      margin: 0px;
+    }
+
+    /* Logout button hover animations - matching router links */
+    .logout-btn:hover {
+      background-color: color-mix(in srgb, #f44336 8%, transparent) !important;
+      transform: translateX(8px);
+    }
+
+    /* Logout icon hover animation - matching router links */
+    .logout-btn:hover .mat-icon {
+      transform: scale(1.1);
+      color: #f44336;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Logout text hover animation - matching router links */
+    .logout-btn:hover span {
+      color: #f44336;
+      font-weight: 500;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Ripple effect for logout button - matching router links */
+    .logout-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, 
+        transparent, 
+        color-mix(in srgb, #f44336 15%, transparent), 
+        transparent);
+      transition: left 0.5s ease;
+    }
+
+    .logout-btn:hover::before {
+      left: 100%;
+    }
+
+    /* Logout icon transitions - matching router links */
+    .logout-btn .mat-icon {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Logout text transitions - matching router links */
+    .logout-btn span {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Divider styling */
+    .nav mat-divider {
+      margin: 16px 0;
+      background-color: var(--outline);
+    }
+
+    /* Navigation Container Layout */
+    .nav-container {
+      display: flex;
+      flex-direction: column;
+      height: calc(100% - 64px);
+    }
+
+    .nav {
+      flex: 1;
     }
