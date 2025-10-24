@@ -1,0 +1,4 @@
+artifacts/
+logs/
+playwright-report/
+test-results/
