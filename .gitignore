@@ -16,3 +16,4 @@ tests/artifacts/
 tests/playwright-report/
 tests/test-results/
 tests/logs/
+scripts/
