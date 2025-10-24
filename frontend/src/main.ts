@@ -1,5 +1,5 @@
 import { bootstrapApplication } from '@angular/platform-browser';
 import { appConfig } from './app/app.config';
-import { ShellComponent } from './app/layout/shell/shell.component';
+import { App } from './app/app';
 
-bootstrapApplication(ShellComponent, appConfig).catch(console.error);
+bootstrapApplication(App, appConfig).catch(console.error);

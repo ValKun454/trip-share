@@ -162,63 +162,26 @@
       color: var(--muted);
     }
 
-    /* Logout Button Styles - Same as router links */
+    /* Logout Button Styles */
     .logout-btn {
-      color: #f44336 !important;
+      color: #ffffff !important;
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      position: relative;
-      overflow: hidden;
-      border: none;
       border-radius: 0px;
-      margin: 0px;
+      margin: 0 8px;
     }
 
-    /* Logout button hover animations - matching router links */
     .logout-btn:hover {
       background-color: color-mix(in srgb, #f44336 8%, transparent) !important;
       transform: translateX(8px);
     }
 
-    /* Logout icon hover animation - matching router links */
     .logout-btn:hover .mat-icon {
       transform: scale(1.1);
-      color: #f44336;
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    /* Logout text hover animation - matching router links */
     .logout-btn:hover span {
-      color: #f44336;
       font-weight: 500;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    /* Ripple effect for logout button - matching router links */
-    .logout-btn::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: -100%;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(90deg, 
-        transparent, 
-        color-mix(in srgb, #f44336 15%, transparent), 
-        transparent);
-      transition: left 0.5s ease;
-    }
-
-    .logout-btn:hover::before {
-      left: 100%;
-    }
-
-    /* Logout icon transitions - matching router links */
-    .logout-btn .mat-icon {
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    /* Logout text transitions - matching router links */
-    .logout-btn span {
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 

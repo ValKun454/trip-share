@@ -9,19 +9,7 @@ export class AuthService {
   
   isLoggedIn$: Observable<boolean> = this.isLoggedInSubject.asObservable();
 
-  constructor() {
-    // For demo purposes, auto-login a mock user if no token exists
-    if (!this.hasToken()) {
-      this.setMockUser();
-    }
-  }
-
-  private setMockUser(): void {
-    const mockUser = { username: 'Demo User', loginTime: new Date() };
-    localStorage.setItem('authToken', 'demo-token');
-    localStorage.setItem('currentUser', JSON.stringify(mockUser));
-    this.isLoggedInSubject.next(true);
-  }
+  constructor() {}
 
   private hasToken(): boolean {
     // Check if user has authentication token
@@ -35,6 +23,7 @@ export class AuthService {
       localStorage.setItem('authToken', 'mock-jwt-token');
       localStorage.setItem('currentUser', JSON.stringify({ username, loginTime: new Date() }));
       this.isLoggedInSubject.next(true);
+      this.router.navigate(['/trips']);
     }
     return new BehaviorSubject(success).asObservable();
   }

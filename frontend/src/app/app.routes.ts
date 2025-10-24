@@ -5,36 +5,33 @@ import { SettingsPageComponent } from './pages/settings-page/settings-page.compo
 import { NotFoundPageComponent } from './pages/not-found-page/not-found-page.component';
 import { ContactUsPageComponent } from './pages/contact-us-page/contact-us-page.component';
 import { LoginPageComponent } from './pages/login-page/login-page.component';
-import { RegisterPageComponent } from './pages/register-page/register-page.component';
-import { AuthLayoutComponent } from './layout/auth-layout/auth-layout.component';
 import { ShellComponent } from './layout/shell/shell.component';
+import { AuthLayoutComponent } from './layout/auth-layout/auth-layout.component';
+import { authGuard, noAuthGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
-  // Authentication routes (without shell)
+  { 
+    path: '', 
+    pathMatch: 'full', 
+    redirectTo: 'login' 
+  },
   {
-    path: 'auth',
+    path: 'login',
     component: AuthLayoutComponent,
+    canActivate: [noAuthGuard],
     children: [
-      { path: 'login', component: LoginPageComponent, title: 'Login - TripShare' },
-      { path: 'register', component: RegisterPageComponent, title: 'Register - TripShare' }
+      { path: '', component: LoginPageComponent, title: 'Login' }
     ]
   },
-  // Redirect old login/register routes
-  { path: 'login', redirectTo: '/auth/login' },
-  { path: 'register', redirectTo: '/auth/register' },
-  
-  // Main application routes (with shell)
   {
     path: '',
     component: ShellComponent,
+    canActivate: [noAuthGuard],
     children: [
-      { path: '', pathMatch: 'full', redirectTo: 'trips' },
-      { path: 'trips', component: TripsPageComponent, title: 'Trips - TripShare' },
-      { path: 'settings', component: SettingsPageComponent, title: 'Settings - TripShare' },
-      { path: 'contact', component: ContactUsPageComponent, title: 'Contact Us - TripShare' },
+      { path: 'trips', component: TripsPageComponent, title: 'Trips' },
+      { path: 'settings', component: SettingsPageComponent, title: 'Settings' },
+      { path: 'contact', component: ContactUsPageComponent, title: 'Contact Us' },
     ]
   },
-  
-  // 404 page
-  { path: '**', component: NotFoundPageComponent, title: 'Not Found - TripShare' },
+  { path: '**', component: NotFoundPageComponent, title: 'Not Found' },
 ];
