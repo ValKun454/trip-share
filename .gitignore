@@ -7,4 +7,12 @@ frontend/node_modules/
 frontend/.angular/
 frontend/dist/
 backend/__pycache__/
-
+.vscode/
+.idea/
+logs/
+logs/**
+tests/node_modules/
+tests/artifacts/
+tests/playwright-report/
+tests/test-results/
+tests/logs/
