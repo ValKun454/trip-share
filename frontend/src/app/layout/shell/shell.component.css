@@ -21,29 +21,33 @@
     }
     .brand { font-weight: 700; letter-spacing: .3px; }
 
-    /* Navigation links styling */
-    .nav a { 
+    /* Navigation items styling (links and buttons) */
+    .nav a,
+    .nav button.mat-mdc-list-item { 
       color: var(--text); 
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       position: relative;
       overflow: hidden;
     }
 
-    /* Hover animations for navigation links */
-    .nav a:hover {
+    /* Hover animations for navigation items */
+    .nav a:hover,
+    .nav button.mat-mdc-list-item:hover {
       background-color: color-mix(in srgb, var(--primary) 8%, transparent);
       transform: translateX(8px);
     }
 
     /* Icon hover animation */
-    .nav a:hover .mat-icon {
+    .nav a:hover .mat-icon,
+    .nav button.mat-mdc-list-item:hover .mat-icon {
       transform: scale(1.1);
       color: var(--primary);
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     /* Text hover animation */
-    .nav a:hover span {
+    .nav a:hover span,
+    .nav button.mat-mdc-list-item:hover span {
       color: var(--primary);
       font-weight: 500;
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -60,8 +64,9 @@
       color: var(--primary);
     }
 
-    /* Ripple effect on hover */
-    .nav a::before {
+    /* Ripple/shimmer effect on hover */
+    .nav a::before,
+    .nav button.mat-mdc-list-item::before {
       content: '';
       position: absolute;
       top: 0;
@@ -75,7 +80,8 @@
       transition: left 0.5s ease;
     }
 
-    .nav a:hover::before {
+    .nav a:hover::before,
+    .nav button.mat-mdc-list-item:hover::before {
       left: 100%;
     }
 
@@ -162,28 +168,8 @@
       color: var(--muted);
     }
 
-    /* Logout Button Styles */
-    .logout-btn {
-      color: #ffffff !important;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      border-radius: 0px;
-      margin: 0 8px;
-    }
-
-    .logout-btn:hover {
-      background-color: color-mix(in srgb, #f44336 8%, transparent) !important;
-      transform: translateX(8px);
-    }
-
-    .logout-btn:hover .mat-icon {
-      transform: scale(1.1);
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .logout-btn:hover span {
-      font-weight: 500;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
+    /* Logout Button inherits nav item styles; keep only spacing if needed */
+    .logout-btn { margin: 0 8px; }
 
     /* Divider styling */
     .nav mat-divider {

@@ -28,6 +28,19 @@ export class AuthService {
     return new BehaviorSubject(success).asObservable();
   }
 
+  /**
+   * Temporary mock login helper for development/demos.
+   * Sets a mock token and a demo user, then navigates to /trips.
+   */
+  loginAsDemo(): Observable<boolean> {
+    const demoUser = { username: 'demo', loginTime: new Date() };
+    localStorage.setItem('authToken', 'mock-jwt-token');
+    localStorage.setItem('currentUser', JSON.stringify(demoUser));
+    this.isLoggedInSubject.next(true);
+    this.router.navigate(['/trips']);
+    return new BehaviorSubject(true).asObservable();
+  }
+
   logout(): void {
     // Clear authentication data
     localStorage.removeItem('authToken');

@@ -25,6 +25,8 @@ import { AuthService } from '../../core/services/auth.service';
 })
 export class LoginPageComponent {
   loginForm: FormGroup;
+  readonly DEMO_USERNAME = 'demo';
+  readonly DEMO_PASSWORD = 'demo123';
 
   constructor(
     private fb: FormBuilder,
@@ -51,5 +53,13 @@ export class LoginPageComponent {
         }
       });
     }
+  }
+
+  fillDemo() {
+    this.loginForm.setValue({ username: this.DEMO_USERNAME, password: this.DEMO_PASSWORD });
+  }
+
+  loginAsDemo() {
+    this.authService.loginAsDemo().subscribe();
   }
 }

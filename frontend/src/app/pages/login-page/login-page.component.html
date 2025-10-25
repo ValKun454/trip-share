@@ -25,10 +25,19 @@
           <mat-icon>login</mat-icon>
           Sign In
         </button>
+
+        <div class="quick-actions">
+          <button mat-stroked-button type="button" (click)="fillDemo()">
+            Fill demo credentials
+          </button>
+          <button mat-flat-button color="accent" type="button" (click)="loginAsDemo()">
+            Login as demo user
+          </button>
+        </div>
       </form>
       
       <div class="demo-hint">
-        <p><small>Enter any username and password to demo</small></p>
+        <p><small>Tip: you can enter any username/password, or use the demo buttons above.</small></p>
       </div>
     </mat-card-content>
   </mat-card>

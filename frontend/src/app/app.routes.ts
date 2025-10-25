@@ -26,7 +26,7 @@ export const routes: Routes = [
   {
     path: '',
     component: ShellComponent,
-    canActivate: [noAuthGuard],
+    canActivate: [authGuard],
     children: [
       { path: 'trips', component: TripsPageComponent, title: 'Trips' },
       { path: 'settings', component: SettingsPageComponent, title: 'Settings' },
