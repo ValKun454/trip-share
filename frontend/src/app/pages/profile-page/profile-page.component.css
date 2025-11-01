@@ -1,0 +1,132 @@
+/* wrapper sekcji profilu, centrowanie na stronie */
+.profile-wrapper {
+  min-height: 100dvh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 40px;
+  padding-bottom: 40px;
+  color: var(--text);
+}
+
+/* karta profilu */
+.profile-card {
+  width: 320px;
+  background: var(--surface-high);
+  border: 1px solid var(--outline);
+  border-radius: 16px;
+  box-shadow: 0 24px 48px rgba(0,0,0,.5);
+  padding: 20px 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* nagłówek z avatarem i nickiem */
+.header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.avatar {
+  width: 48px;
+  height: 48px;
+  background: color-mix(in srgb, var(--primary) 20%, transparent);
+  border: 1px solid color-mix(in srgb, var(--primary) 50%, transparent);
+  color: var(--primary);
+  border-radius: 999px;
+  font-size: 18px;
+  font-weight: 600;
+  display: grid;
+  place-items: center;
+  line-height: 1;
+}
+
+.user-meta {
+  display: flex;
+  flex-direction: column;
+}
+.user-nick {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--text);
+}
+.user-label {
+  color: var(--muted);
+  font-size: 0.75rem;
+  line-height: 1.2;
+}
+
+/* sekcja pól */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* pojedyncza linia pola (etykieta + wartość) */
+.row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.85rem;
+}
+
+/* wersja edytowalna (nickname) wyróżniona minimalnie */
+.row.editable .label {
+  color: var(--primary);
+}
+
+/* lewy label */
+.label {
+  font-size: 0.7rem;
+  color: var(--muted);
+  font-weight: 600;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+}
+
+/* wartość tekstowa */
+.value {
+  color: var(--text);
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--outline);
+  border-radius: 8px;
+  padding: 10px 12px;
+  line-height: 1.3;
+  word-break: break-all;
+}
+
+/* uid możemy trochę przyciemnić żeby wyglądało techowo */
+.value.uid {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+/* input do nicka */
+.nick-input {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--outline);
+  border-radius: 8px;
+  padding: 10px 12px;
+  line-height: 1.3;
+  font-size: 0.85rem;
+  color: var(--text);
+  outline: none;
+  width: 100%;
+  max-width: 200px; /* nie rozciągamy na całą szerokość */
+  font-family: inherit;
+}
+
+.nick-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 30%, transparent);
+}
+
+/* przycisk zapisu */
+.actions {
+  display: flex;
+  justify-content: flex-end;
+}

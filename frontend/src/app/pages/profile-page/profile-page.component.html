@@ -1,0 +1,46 @@
+<section class="profile-wrapper">
+
+  <div class="profile-card">
+
+    <div class="header">
+      <div class="avatar">
+        <!-- inicjały usera jako "avatar" -->
+        <span>{{ (nickname.value || 'U')[0] | uppercase }}</span>
+      </div>
+      <div class="user-meta">
+        <div class="user-nick">{{ nickname.value || 'Unnamed' }}</div>
+        <div class="user-label">Your profile</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="row">
+        <div class="label">Email</div>
+        <div class="value">{{ user.email || '—' }}</div>
+      </div>
+
+      <div class="row editable">
+        <div class="label">Nickname</div>
+        <input
+          class="nick-input"
+          [formControl]="nickname"
+          placeholder="np. CR7"
+          maxlength="24"
+        />
+      </div>
+
+      <div class="row">
+        <div class="label">uID</div>
+        <div class="value uid">{{ user.uid || '—' }}</div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button mat-raised-button color="primary" (click)="save()">
+        Save
+      </button>
+    </div>
+
+  </div>
+
+</section>
