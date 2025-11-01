@@ -1,0 +1,55 @@
+<section class="wrap" *ngIf="!loading; else loader">
+
+  <ng-container *ngIf="data.length; else empty">
+    <div class="grid">
+      <mat-card class="trip" *ngFor="let s of data">
+        <mat-card-title class="trip__title">
+          <mat-icon>travel_explore</mat-icon>
+          <span>{{ s.trip.name }}</span>
+        </mat-card-title>
+
+        <div class="trip__totals">
+          <div class="kpi">
+            <div class="kpi__label">You owe</div>
+            <div class="kpi__value negative">{{ s.totalYouOwe | currency:'PLN':'symbol':'1.2-2' }}</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi__label">Owed to you</div>
+            <div class="kpi__value positive">{{ s.totalOwedToYou | currency:'PLN':'symbol':'1.2-2' }}</div>
+          </div>
+        </div>
+
+        <mat-divider></mat-divider>
+
+        <div class="lists">
+          <div class="list">
+            <div class="list__title"><mat-icon>call_made</mat-icon> You owe</div>
+            <div class="row" *ngFor="let kv of s.youOwe | keyvalue">
+              <span class="who">{{ kv.key }}</span>
+              <span class="amount negative">{{ kv.value | currency:'PLN':'symbol':'1.2-2' }}</span>
+            </div>
+            <div class="muted" *ngIf="(s.youOwe | keyvalue).length === 0">No debts</div>
+          </div>
+
+          <div class="list">
+            <div class="list__title"><mat-icon>call_received</mat-icon> Owe you</div>
+            <div class="row" *ngFor="let kv of s.owedToYou | keyvalue">
+              <span class="who">{{ kv.key }}</span>
+              <span class="amount positive">{{ kv.value | currency:'PLN':'symbol':'1.2-2' }}</span>
+            </div>
+            <div class="muted" *ngIf="(s.owedToYou | keyvalue).length === 0">No one owes you</div>
+          </div>
+        </div>
+      </mat-card>
+    </div>
+  </ng-container>
+
+</section>
+
+<ng-template #loader>
+  <div class="loader">Loading...</div>
+</ng-template>
+
+<ng-template #empty>
+  <div class="empty">No trips yet.</div>
+</ng-template>

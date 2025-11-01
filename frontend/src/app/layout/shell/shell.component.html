@@ -23,6 +23,19 @@
             </a>
           </ng-template>
 
+          <a mat-list-item routerLink="/expenses" routerLinkActive="active"
+            *ngIf="!(isHandset$ | async); else expensesMobile">
+            <mat-icon matListItemIcon>account_balance_wallet</mat-icon>
+            <span matListItemTitle>Total Expenses</span>
+          </a>
+          <ng-template #expensesMobile>
+            <a mat-list-item routerLink="/expenses" routerLinkActive="active" (click)="snav.close()">
+              <mat-icon matListItemIcon>account_balance_wallet</mat-icon>
+              <span matListItemTitle>Total Expenses</span>
+            </a>
+          </ng-template>
+
+
         <a mat-list-item routerLink="/profile" routerLinkActive="active"
           *ngIf="!(isHandset$ | async); else profileMobile">
           <mat-icon matListItemIcon>account_circle</mat-icon>

@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 
 import { TripsPageComponent } from './pages/trips-page/trips-page.component';
+import { ExpensesSummaryPageComponent } from './pages/expenses-summary-page/expenses-summary-page.component';
 import { ProfilePageComponent } from './pages/profile-page/profile-page.component';
 import { NotFoundPageComponent } from './pages/not-found-page/not-found-page.component';
 import { ContactUsPageComponent } from './pages/contact-us-page/contact-us-page.component';
@@ -29,6 +30,7 @@ export const routes: Routes = [
     canActivate: [authGuard],
     children: [
       { path: 'trips', component: TripsPageComponent, title: 'Trips' },
+          { path: 'expenses', component: ExpensesSummaryPageComponent, title: 'Total Expenses' },
       { path: 'profile', component: ProfilePageComponent, title: 'Profile' },
       { path: 'contact', component: ContactUsPageComponent, title: 'Contact Us' },
     ]
