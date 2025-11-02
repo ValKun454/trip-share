@@ -1,0 +1,43 @@
+<div class="register-container">
+  <mat-card class="register-card">
+    <mat-card-header>
+      <div class="logo-container">
+        <mat-icon class="app-logo">person_add</mat-icon>
+      </div>
+      <mat-card-title>Create your account</mat-card-title>
+      <mat-card-subtitle>Sign up to start sharing trip expenses</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      <form [formGroup]="form" (ngSubmit)="submit()">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Email</mat-label>
+          <input matInput formControlName="email" placeholder="you@example.com">
+          <mat-icon matSuffix>mail</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Username (optional)</mat-label>
+          <input matInput formControlName="username" placeholder="your nickname">
+          <mat-icon matSuffix>person</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Password</mat-label>
+          <input matInput type="password" formControlName="password" placeholder="min 6 characters">
+          <mat-icon matSuffix>lock</mat-icon>
+        </mat-form-field>
+
+        <button mat-raised-button color="primary" class="register-btn" type="submit" [disabled]="form.invalid">
+          <mat-icon>how_to_reg</mat-icon>
+          Create account
+        </button>
+      </form>
+
+      <div class="login-cta">
+        <span>Already have an account?</span>
+        <button mat-button color="primary" type="button" (click)="goLogin()">Sign in</button>
+      </div>
+    </mat-card-content>
+  </mat-card>
+</div>

@@ -6,6 +6,7 @@ import { ProfilePageComponent } from './pages/profile-page/profile-page.componen
 import { NotFoundPageComponent } from './pages/not-found-page/not-found-page.component';
 import { ContactUsPageComponent } from './pages/contact-us-page/contact-us-page.component';
 import { LoginPageComponent } from './pages/login-page/login-page.component';
+import { RegisterPageComponent } from './pages/register-page/register-page.component';
 import { ShellComponent } from './layout/shell/shell.component';
 import { AuthLayoutComponent } from './layout/auth-layout/auth-layout.component';
 import { authGuard, noAuthGuard } from './core/guards/auth.guard';
@@ -24,6 +25,17 @@ export const routes: Routes = [
       { path: '', component: LoginPageComponent, title: 'Login' }
     ]
   },
+
+  // NEW: rejestracja w tym samym layoucie auth
+  {
+    path: 'register',
+    component: AuthLayoutComponent,
+    canActivate: [noAuthGuard],
+    children: [
+      { path: '', component: RegisterPageComponent, title: 'Register' }
+    ]
+  },
+
   {
     path: '',
     component: ShellComponent,

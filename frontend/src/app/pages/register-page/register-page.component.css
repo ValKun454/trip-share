@@ -1,0 +1,77 @@
+.register-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.register-card {
+  width: 100%;
+  max-width: 400px;
+  padding: 32px;
+  background: var(--surface-high) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 20px 40px rgba(0,0,0,.4) !important;
+  animation: slideUp .6s cubic-bezier(0.4,0,0.2,1);
+}
+
+.register-card mat-card-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.register-card mat-card-title {
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: var(--text);
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.register-card mat-card-subtitle {
+  text-align: center;
+  color: var(--muted);
+  font-size: .9rem;
+}
+
+.full-width { width: 100%; margin-bottom: 20px; }
+
+.register-btn {
+  width: 100%;
+  height: 48px;
+  margin-top: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.logo-container { text-align: center; margin-bottom: 16px; }
+.app-logo { font-size: 48px; width: 48px; height: 48px; color: var(--primary); }
+
+.login-cta {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--outline);
+  color: var(--muted);
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Ujednolicenie z loginem (outline, label itd.) */
+::ng-deep .mat-mdc-form-field { width: 100%; }
+::ng-deep .mat-mdc-form-field .mat-mdc-floating-label { color: var(--muted); }
+::ng-deep .mat-mdc-form-field.mat-focused .mat-mdc-floating-label { color: var(--primary); }
+::ng-deep .mat-mdc-form-field-outline { border-radius: 8px; }
+
+.register-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(59, 130, 246, 0.3);
+}
+
+.register-btn mat-icon { margin-right: 8px; }
