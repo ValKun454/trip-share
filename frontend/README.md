@@ -1,59 +1,71 @@
-# TripShareFrontend
+# TripShare Frontend
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.3.6.
+Single-page application built with **Angular (standalone)** and **Angular Material**.  
+Backend (FastAPI) is expected at `http://localhost:8000/api`.
 
-## Development server
+## Quick Start
 
-To start a local development server, run:
+1. **Install Node.js (LTS)**
+   - Download from https://nodejs.org (LTS).
+   - Verify versions:
+     ```bash
+     node -v
+     npm -v
+     ```
+   - If `node`/`npm` is “not found”, reopen the terminal or add Node.js to PATH.
+
+2. **Install dependencies**
+   ```bash
+   cd frontend
+   npm ci      # or: npm install
+````
+
+3. **Start the dev server**
+
+   ```bash
+   npm start
+   ```
+
+   Open `http://localhost:4200/`.
+
+   > If you see `ng: command not found`:
+   >
+   > * You **do not** need a global Angular CLI. Use:
+   >
+   >   ```bash
+   >   npx ng serve
+   >   ```
+   > * On Windows PowerShell with script-execution errors:
+   >
+   >   ```powershell
+   >   Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
+   >   npx ng serve
+   >   ```
+
+4. **API base URL**
+
+   * Configured in `src/app/core/services/api.service.ts`:
+
+     ```ts
+     private base = 'http://localhost:8000/api';
+     ```
+   * Adjust if your backend runs elsewhere.
+
+---
+
+## Scripts
 
 ```bash
-ng serve
+npm start     # run dev server (ng serve)
+npm run build # production build (outputs to dist/)
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+---
 
-## Code scaffolding
+## Routes
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+* `/login`, `/register`
+* `/trips`, `/expenses`, `/profile`, `/contact`
+* `/**` → 404
 
-```bash
-ng generate component component-name
-```
-
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
-```bash
-ng generate --help
-```
-
-## Building
-
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+Guards: `noAuthGuard` (public), `authGuard` (protected).
