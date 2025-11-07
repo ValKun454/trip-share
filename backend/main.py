@@ -1,8 +1,13 @@
-from fastapi import FastAPI, APIRouter
+from fastapi import FastAPI, APIRouter, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
 import uvicorn
+from datetime import timedelta
 from schemas import *
+from auth import authenticate_user, create_access_token, get_current_user, get_db, ACCESS_TOKEN_EXPIRE_MINUTES
+from models import User
 
 
 app = FastAPI()
@@ -24,6 +29,34 @@ app.add_middleware(
 @prefix_router.get("/")
 def read_root():
     return {"message": "Hello from FastAPI!"}
+
+# Authentication endpoints
+@prefix_router.post("/login", response_model=Token)
+async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    """
+    Login endpoint - accepts email (as username) and password
+    Returns JWT access token
+    """
+    user = authenticate_user(db, form_data.username, form_data.password)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": user.email}, expires_delta=access_token_expires
+    )
+    return {"access_token": access_token, "token_type": "bearer"}
+
+@prefix_router.get("/me")
+async def read_users_me(current_user: User = Depends(get_current_user)):
+    """
+    Get current user info - protected endpoint
+    Requires valid JWT token
+    """
+    return {"email": current_user.email, "id": current_user.id}
 
 
 
