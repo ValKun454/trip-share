@@ -2,6 +2,8 @@ from fastapi import FastAPI, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
+from schemas import *
+
 
 app = FastAPI()
 
@@ -26,11 +28,7 @@ def read_root():
 
 
 # GET endpoint - retrieve data  ---- trip 
-class Trip(BaseModel):
-    id: str
-    name: str
-    dates: str
-    participants: list[str]
+
 
 @prefix_router.get("/trips/{trip_id}")
 def get_trip(trip_id: int):
@@ -47,16 +45,7 @@ def get_trips():
     ]
 
 
-class TripCreate(BaseModel):   # TODO: maybe add id as optional field later and delete second object TripCreateResponse
-    name: str
-    dates: str
-    participants: list[str]
 
-class TripCreateResponse(BaseModel):
-    trip_id: int
-    name: str
-    dates: str
-    participants: list[str]
 
 
 @prefix_router.post("/trips", response_model=TripCreateResponse, status_code=201)
@@ -70,31 +59,7 @@ def get_expenses(trip_id: int):
     {"id": 2,"tripId": trip_id , "title": "Sample Expense 2"}
     ]
 
-class Expense(BaseModel):
-    id: str
-    trip_id: str
-    title: str
-    amount: float
-    paid_by: str
-    included: list[str]
-    date: str
 
-class ExpenseCreate(BaseModel):   #TODO: same as previous, combine two schemas by id optional
-    trip_id: str
-    title: str
-    amount: float
-    paid_by: str
-    included: list[str]
-    date: str
-
-class ExpenseCreateResponse(BaseModel):
-    id: int
-    trip_id: int
-    title: str
-    amount: float
-    paid_by: str
-    included: list[str]
-    date: str
 
 @prefix_router.post("/trips/{trip_id}/expenses", response_model=ExpenseCreateResponse, status_code=201)
 def create_expense(data: ExpenseCreate):
