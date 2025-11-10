@@ -6,8 +6,9 @@ from sqlalchemy.orm import Session
 import uvicorn
 from datetime import timedelta
 from schemas import *
-from auth import authenticate_user, create_access_token, get_current_user, get_db, ACCESS_TOKEN_EXPIRE_MINUTES
+from auth import authenticate_user, create_access_token, get_current_user, get_db, ACCESS_TOKEN_EXPIRE_MINUTES, get_password_hash
 from models import User
+from email_utils import create_verification_token, verify_verification_token, send_verification_email
 
 
 app = FastAPI()
@@ -31,32 +32,148 @@ def read_root():
     return {"message": "Hello from FastAPI!"}
 
 # Authentication endpoints
+@prefix_router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+async def register(user_data: UserRegister, db: Session = Depends(get_db)):
+    """
+    Register a new user
+    - Email must be unique
+    - Username must be unique
+    - Password must be at least 8 characters
+    """
+    # Check if email already exists
+    existing_user = db.query(User).filter(User.email == user_data.email).first()
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email already registered"
+        )
+
+    # Check if username already exists
+    existing_username = db.query(User).filter(User.username == user_data.username).first()
+    if existing_username:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Username already taken"
+        )
+
+    # Create new user
+    hashed_password = get_password_hash(user_data.password)
+    new_user = User(
+        email=user_data.email,
+        username=user_data.username,
+        hashed_password=hashed_password,
+        is_verified=False
+    )
+
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+
+    # Send verification email
+    verification_token = create_verification_token(new_user.email)
+    send_verification_email(new_user.email, new_user.username, verification_token)
+
+    return new_user
+
+@prefix_router.get("/verify")
+async def verify_email(token: str, db: Session = Depends(get_db)):
+    """
+    Email verification endpoint
+    User clicks link in email with verification token
+    """
+    # Verify the token
+    email = verify_verification_token(token)
+    if not email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired verification token"
+        )
+
+    # Find user by email
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+
+    # Check if already verified
+    if user.is_verified:
+        return {"message": "Email already verified"}
+
+    # Mark as verified
+    user.is_verified = True
+    db.commit()
+
+    return {"message": "Email successfully verified! You can now log in."}
+
+@prefix_router.post("/resend-verification")
+async def resend_verification(email_data: dict, db: Session = Depends(get_db)):
+    """
+    Resend verification email
+    Body: {"email": "user@example.com"}
+    """
+    email = email_data.get("email")
+    if not email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email is required"
+        )
+
+    # Find user
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        # Don't reveal if user exists or not for security
+        return {"message": "If the email exists, a verification link has been sent"}
+
+    # Check if already verified
+    if user.is_verified:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email already verified"
+        )
+
+    # Send verification email
+    verification_token = create_verification_token(user.email)
+    send_verification_email(user.email, user.username, verification_token)
+
+    return {"message": "Verification email sent"}
+
 @prefix_router.post("/login", response_model=Token)
-async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+async def login(login_data: UserLogin, db: Session = Depends(get_db)):
     """
-    Login endpoint - accepts email (as username) and password
+    Login endpoint - accepts email and password as JSON
     Returns JWT access token
+    Requires email to be verified
     """
-    user = authenticate_user(db, form_data.username, form_data.password)
+    user = authenticate_user(db, login_data.email, login_data.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+    # Check if email is verified
+    if not user.is_verified:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Email not verified. Please check your email and verify your account first."
+        )
+
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={"sub": user.email}, expires_delta=access_token_expires
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
-@prefix_router.get("/me")
+@prefix_router.get("/me", response_model=UserResponse)
 async def read_users_me(current_user: User = Depends(get_current_user)):
     """
     Get current user info - protected endpoint
-    Requires valid JWT token
+    Requires valid JWT token in Authorization header: Bearer <token>
     """
-    return {"email": current_user.email, "id": current_user.id}
+    return current_user
 
 
 
