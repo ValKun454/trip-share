@@ -56,4 +56,9 @@ export class ApiService {
   getDebtsSummaryByUid(uid: string): Observable<DebtsSummary> {
     return this.http.get<DebtsSummary>(`${this.base}/debts/summary?uid=${encodeURIComponent(uid)}`);
   }
+
+  // Trip summary endpoint (expected to return settlement / summary data for a trip)
+  getTripSummary(tripId: string): Observable<any> {
+    return this.http.get<any>(`${this.base}/trips/${encodeURIComponent(tripId)}/summary`);
+  }
 }

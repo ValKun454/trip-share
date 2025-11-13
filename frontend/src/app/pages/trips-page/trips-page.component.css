@@ -1,32 +1,203 @@
-.header { 
-    display:flex; 
-    align-items:center; 
-    gap:12px; justify-content:space-between; 
-    margin-bottom:16px; 
+/* Toolbar */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 16px;
 }
 
-.actions { 
-    display:flex; 
-    gap:8px; 
+.title {
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: var(--text);
 }
 
-.grid { 
-    display:grid; 
-    grid-template-columns: repeat(auto-fill,minmax(260px,1fr)); 
-    gap:16px; 
-    margin-top:8px; 
+.spacer {
+  flex: 1 1 auto;
 }
 
-.trip { 
-    min-height: 140px; 
-    background: var(--surface-high); 
+/* Main content area */
+.content {
+  padding: 24px;
+  min-height: calc(100dvh - 64px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
 }
 
+/* Create panel */
+.create-panel {
+  background: var(--surface-high);
+  padding: 20px;
+  margin-bottom: 24px;
+  border-radius: 14px;
+  border: 1px solid var(--outline);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35);
+  position: relative;
+  z-index: 1;
+}
+
+.create-panel h3 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--text);
+}
+
+.create-panel form {
+  max-width: 600px;
+}
+
+.full-width {
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+/* Loading and error states */
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 64px 16px;
+  min-height: 300px;
+}
+
+.error {
+  background: color-mix(in srgb, #ef4444 15%, transparent);
+  color: #fca5a5;
+  padding: 16px;
+  border-radius: 10px;
+  border-left: 4px solid #ef4444;
+  margin-bottom: 16px;
+  border: 1px solid color-mix(in srgb, #ef4444 30%, transparent);
+}
+
+.error p {
+  margin: 0 0 12px 0;
+  font-weight: 500;
+}
+
+/* Grid layout */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  margin-top: 12px;
+}
+
+@media (max-width: 768px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Trip card */
+.trip {
+  min-height: 180px;
+  background: var(--surface-high);
+  border: 1px solid var(--outline);
+  border-radius: 14px;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.trip:hover {
+  border-color: color-mix(in srgb, var(--primary) 50%, transparent);
+  box-shadow: 0 16px 32px rgba(59, 130, 246, 0.15);
+  transform: translateY(-2px);
+}
+
+/* Avatar */
 .avatar {
-      width: 40px; 
-      height: 40px; 
-      display:grid; 
-      place-items:center;
-      border-radius: 50%;
-      background: color-mix(in srgb, var(--primary) 18%, transparent);
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--primary) 20%, transparent);
+  border: 1px solid color-mix(in srgb, var(--primary) 50%, transparent);
+  color: var(--primary);
+  font-weight: 700;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+/* Card content styling */
+::ng-deep .mat-mdc-card-header {
+  padding: 16px;
+  border-bottom: 1px solid var(--outline);
+  gap: 12px;
+}
+
+::ng-deep .mat-mdc-card-content {
+  padding: 16px;
+}
+
+::ng-deep .mat-mdc-card-actions {
+  padding: 8px 16px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.meta {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  font-weight: 600;
+}
+
+.meta strong {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.summary {
+  margin-top: 12px;
+  font-size: 0.85rem;
+  color: var(--muted);
+  padding-top: 12px;
+  border-top: 1px solid var(--outline);
+}
+
+.summary strong {
+  color: var(--text);
+  font-weight: 500;
+  display: block;
+  margin-top: 6px;
+}
+
+/* Actions */
+.actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+/* Datepicker overlay styling */
+::ng-deep .mat-datepicker-content {
+  background: var(--surface-high) !important;
+  color: var(--text) !important;
+}
+
+::ng-deep .mat-calendar {
+  background: var(--surface-high) !important;
+  color: var(--text) !important;
+}
+
+::ng-deep .mat-calendar-body-cell {
+  color: var(--text) !important;
+}
+
+::ng-deep .mat-calendar-body-selected {
+  background-color: var(--primary) !important;
+  color: white !important;
+}
+
+::ng-deep .mat-calendar-body-today:not(.mat-calendar-body-selected) {
+  border-color: var(--primary) !important;
 }
