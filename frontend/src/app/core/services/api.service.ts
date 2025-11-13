@@ -15,6 +15,24 @@ export class ApiService {
 
   constructor(private http: HttpClient) {}
 
+  private getAuthHeaders() {
+    const token = localStorage.getItem('authToken');
+    const headers: Record<string,string> = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    return { headers };
+  }
+
+  // Authentication
+  login(email: string, password: string): Observable<any> {
+    return this.http.post(`${this.base}/login`, { email, password });
+  }
+
+  getMe(): Observable<any> {
+    return this.http.get(`${this.base}/me`, this.getAuthHeaders());
+  }
+
   // poezdki
   getTrips(): Observable<GetTrip[]> {
     return this.http.get<GetTrip[]>(`${this.base}/trips`);

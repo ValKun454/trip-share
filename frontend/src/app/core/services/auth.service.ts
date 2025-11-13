@@ -1,12 +1,15 @@
 import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, tap, of, map, catchError, throwError } from 'rxjs';
+import { ApiService } from './api.service';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private router = inject(Router);
+  private api = inject(ApiService);
+
   private isLoggedInSubject = new BehaviorSubject<boolean>(this.hasToken());
-  
+
   isLoggedIn$: Observable<boolean> = this.isLoggedInSubject.asObservable();
 
   constructor() {}
@@ -16,16 +19,37 @@ export class AuthService {
     return !!localStorage.getItem('authToken');
   }
 
-  login(username: string, password: string): Observable<boolean> {
-    // Simulate login - replace with actual API call
-    const success = !!(username && password); // Basic validation
-    if (success) {
-      localStorage.setItem('authToken', 'mock-jwt-token');
-      localStorage.setItem('currentUser', JSON.stringify({ username, loginTime: new Date() }));
-      this.isLoggedInSubject.next(true);
-      this.router.navigate(['/trips']);
+  /**
+   * Call backend to login. On success store token and current user.
+   * Expects backend POST /api/login { email, password } -> { access_token, token_type }
+   */
+  login(email: string, password: string): Observable<boolean> {
+    if (!email || !password) {
+      return of(false);
     }
-    return new BehaviorSubject(success).asObservable();
+    return this.api.login(email, password).pipe(
+      tap((res: any) => {
+        const token = res?.access_token || res?.accessToken || res?.accessToken;
+        if (token) {
+          localStorage.setItem('authToken', token);
+          // fetch current user but don't block
+          this.api.getMe().subscribe({
+            next: (user) => localStorage.setItem('currentUser', JSON.stringify(user)),
+            error: () => {}
+          });
+          this.isLoggedInSubject.next(true);
+          this.router.navigate(['/trips']);
+        }
+      }),
+      map((res: any) => {
+        const token = res?.access_token || res?.accessToken || res?.accessToken;
+        return !!token;
+      }),
+      catchError((err) => {
+        // propagate error to caller so UI can display messages
+        return throwError(() => err);
+      })
+    );
   }
 
   /**

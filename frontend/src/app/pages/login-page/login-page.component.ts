@@ -26,8 +26,10 @@ import { Router } from '@angular/router';
 })
 export class LoginPageComponent {
   loginForm: FormGroup;
-  readonly DEMO_USERNAME = 'demo';
+  readonly DEMO_EMAIL = 'demo@example.com';
   readonly DEMO_PASSWORD = 'demo123';
+  isLoading = false;
+  serverError: string | null = null;
 
   constructor(
     private fb: FormBuilder,
@@ -36,7 +38,7 @@ export class LoginPageComponent {
 
   ) {
     this.loginForm = this.fb.group({
-      username: ['', [Validators.required]],
+      email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required]]
     });
   }
@@ -47,24 +49,39 @@ export class LoginPageComponent {
   }
 
   onLogin() {
-    if (this.loginForm.valid) {
-      const { username, password } = this.loginForm.value;
-      this.authService.login(username, password).subscribe({
-        next: (success) => {
-          if (!success) {
-            // Handle login error
-            console.error('Login failed');
-          }
-        },
-        error: (error) => {
-          console.error('Login error:', error);
-        }
-      });
+    if (!this.loginForm.valid) {
+      this.loginForm.markAllAsTouched();
+      return;
     }
+
+    const { email, password } = this.loginForm.value;
+    this.isLoading = true;
+    this.serverError = null;
+
+    this.authService.login(email, password).subscribe({
+      next: (success) => {
+        this.isLoading = false;
+        if (!success) {
+          this.serverError = 'Login failed. Please check your credentials.';
+        }
+      },
+      error: (error) => {
+        this.isLoading = false;
+        // Inspect HTTP error
+        const status = error?.status;
+        if (status === 401) {
+          this.serverError = 'Incorrect email or password.';
+        } else if (status === 403) {
+          this.serverError = 'Email not verified. Please verify your email before logging in.';
+        } else {
+          this.serverError = error?.error?.detail || 'An unexpected error occurred. Please try again.';
+        }
+      }
+    });
   }
 
   fillDemo() {
-    this.loginForm.setValue({ username: this.DEMO_USERNAME, password: this.DEMO_PASSWORD });
+    this.loginForm.setValue({ email: this.DEMO_EMAIL, password: this.DEMO_PASSWORD });
   }
 
   loginAsDemo() {
