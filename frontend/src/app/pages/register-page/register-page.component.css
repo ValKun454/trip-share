@@ -15,39 +15,17 @@
   animation: slideUp .6s cubic-bezier(0.4,0,0.2,1);
 }
 
-.register-card mat-card-header {
-  text-align: center;
-  margin-bottom: 32px;
-}
-
-.register-card mat-card-title {
-  font-size: 1.6rem;
-  font-weight: 600;
-  color: var(--text);
-  text-align: center;
-  margin-bottom: 8px;
-}
-
-.register-card mat-card-subtitle {
-  text-align: center;
-  color: var(--muted);
-  font-size: .9rem;
-}
+.register-card mat-card-header { text-align: center; margin-bottom: 32px; }
+.register-card mat-card-title { font-size: 1.6rem; font-weight: 600; color: var(--text); text-align: center; margin-bottom: 8px; }
+.register-card mat-card-subtitle { text-align: center; color: var(--muted); font-size: .9rem; }
 
 .full-width { width: 100%; margin-bottom: 20px; }
-
-.register-btn {
-  width: 100%;
-  height: 48px;
-  margin-top: 8px;
-  font-size: 1rem;
-  font-weight: 600;
-}
+.register-btn { width: 100%; height: 48px; margin-top: 8px; font-size: 1rem; font-weight: 600; }
 
 .logo-container { text-align: center; margin-bottom: 16px; }
 .app-logo { font-size: 48px; width: 48px; height: 48px; color: var(--primary); }
 
-.login-cta {
+.login-cta, .verify-actions {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -58,20 +36,21 @@
   color: var(--muted);
 }
 
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(30px); }
-  to   { opacity: 1; transform: translateY(0); }
+/* compact errors under fields */
+.field-error {
+  margin: 6px 0 10px;
+  line-height: 1.2;
 }
+.field-error small { color: #f87171; } /* red-400 */
 
-/* Ujednolicenie z loginem (outline, label itd.) */
+.server-error .error-card { background: color-mix(in srgb, #ef4444 20%, transparent); padding: 10px 12px; border-radius: 8px; }
+.verify-info { margin-top: 16px; color: var(--text); }
+
+@keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
 ::ng-deep .mat-mdc-form-field { width: 100%; }
-::ng-deep .mat-mdc-form-field .mat-mdc-floating-label { color: var(--muted); }
-::ng-deep .mat-mdc-form-field.mat-focused .mat-mdc-floating-label { color: var(--primary); }
+::ng-deep .mat-mdc-form-field .mat-mdc-floating-label { color: var(--muted); opacity: .85; }
+::ng-deep .mat-mdc-form-field.mat-focused .mat-mdc-floating-label { color: var(--primary); opacity: 1; }
 ::ng-deep .mat-mdc-form-field-outline { border-radius: 8px; }
 
-.register-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(59, 130, 246, 0.3);
-}
-
+.register-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 16px rgba(59,130,246,0.3); }
 .register-btn mat-icon { margin-right: 8px; }

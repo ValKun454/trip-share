@@ -12,29 +12,58 @@
       <form [formGroup]="form" (ngSubmit)="submit()">
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Email</mat-label>
-          <input matInput formControlName="email" placeholder="you@example.com">
+          <input matInput formControlName="email">
           <mat-icon matSuffix>mail</mat-icon>
         </mat-form-field>
+        <div class="field-error" *ngIf="form.get('email')?.touched && form.get('email')?.invalid">
+          <small *ngIf="form.get('email')?.errors?.['required']">Email is required.</small>
+          <small *ngIf="form.get('email')?.errors?.['email']">Enter a valid email.</small>
+        </div>
 
         <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Username (optional)</mat-label>
-          <input matInput formControlName="username" placeholder="your nickname">
+          <mat-label>Username</mat-label>
+          <input matInput formControlName="username">
           <mat-icon matSuffix>person</mat-icon>
         </mat-form-field>
+        <div class="field-error" *ngIf="form.get('username')?.touched && form.get('username')?.invalid">
+          <small *ngIf="form.get('username')?.errors?.['required']">Username is required.</small>
+          <small *ngIf="form.get('username')?.errors?.['minlength']">Min 3 characters.</small>
+          <small *ngIf="form.get('username')?.errors?.['maxlength']">Max 50 characters.</small>
+        </div>
 
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Password</mat-label>
-          <input matInput type="password" formControlName="password" placeholder="min 6 characters">
+          <input matInput type="password" formControlName="password">
           <mat-icon matSuffix>lock</mat-icon>
         </mat-form-field>
+        <div class="field-error" *ngIf="form.get('password')?.touched && form.get('password')?.invalid">
+          <small *ngIf="form.get('password')?.errors?.['required']">Password is required.</small>
+          <small *ngIf="form.get('password')?.errors?.['minlength']">Min 8 characters.</small>
+        </div>
 
-        <button mat-raised-button color="primary" class="register-btn" type="submit" [disabled]="form.invalid">
+        <button mat-raised-button color="primary" class="register-btn" type="submit" [disabled]="form.invalid || isLoading">
           <mat-icon>how_to_reg</mat-icon>
-          Create account
+          <span *ngIf="!isLoading">Create account</span>
+          <span *ngIf="isLoading">Creating…</span>
         </button>
       </form>
 
-      <div class="login-cta">
+      <div class="server-error" *ngIf="serverError">
+        <mat-card class="error-card">
+          <p>{{ serverError }}</p>
+        </mat-card>
+      </div>
+
+      <!-- Success info: ask user to verify email -->
+      <div class="verify-info" *ngIf="successInfo">
+        <p>We’ve sent a verification link to <b>{{ successInfo.email }}</b>. Please check your inbox.</p>
+        <div class="verify-actions">
+          <button mat-stroked-button type="button" (click)="resend()">Resend email</button>
+          <button mat-button color="primary" type="button" (click)="goLogin()">Go to login</button>
+        </div>
+      </div>
+
+      <div class="login-cta" *ngIf="!successInfo">
         <span>Already have an account?</span>
         <button mat-button color="primary" type="button" (click)="goLogin()">Sign in</button>
       </div>

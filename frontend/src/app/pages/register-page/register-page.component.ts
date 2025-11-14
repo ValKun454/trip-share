@@ -7,6 +7,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { Router } from '@angular/router';
+import { ApiService } from '../../core/services/api.service';
 
 @Component({
   selector: 'app-register-page',
@@ -24,21 +25,62 @@ import { Router } from '@angular/router';
   styleUrls: ['./register-page.component.css']
 })
 export class RegisterPageComponent {
+  form: FormGroup;
+  isLoading = false;
+  serverError: string | null = null;
+  successInfo: { email: string } | null = null;
 
-  form!: FormGroup;
-
-  constructor(private fb: FormBuilder, private router: Router) {
+  constructor(
+    private fb: FormBuilder,
+    private router: Router,
+    private api: ApiService
+  ) {
     this.form = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
-      username: [''],
-      password: ['', [Validators.required, Validators.minLength(6)]],
+      // backend: username is REQUIRED (min 3, max 50)
+      username: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(50)]],
+      // backend: password min 8
+      password: ['', [Validators.required, Validators.minLength(8)]],
     });
   }
 
   submit() {
-    if (this.form.invalid) return;
-    console.log('register payload', this.form.value); // miejsce na api register
-    this.router.navigateByUrl('/login');
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
+    this.isLoading = true;
+    this.serverError = null;
+    this.successInfo = null;
+
+    const payload = this.form.value as { email:string; username:string; password:string };
+
+    this.api.register(payload).subscribe({
+      next: () => {
+        this.isLoading = false;
+        // show “check your email” and keep on this screen
+        this.successInfo = { email: payload.email };
+        this.form.disable();
+      },
+      error: (err) => {
+        this.isLoading = false;
+        const detail = err?.error?.detail || '';
+        if (detail) {
+          this.serverError = detail; // "Email already registered" / "Username already taken"
+        } else {
+          this.serverError = 'Registration failed. Please try again.';
+        }
+      }
+    });
+  }
+
+  resend() {
+    const email = this.form.get('email')?.value;
+    if (!email) return;
+    this.api.resendVerification(email).subscribe({
+      next: () => {},
+      error: () => {}
+    });
   }
 
   goLogin() {

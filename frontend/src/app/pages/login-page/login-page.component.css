@@ -45,15 +45,24 @@
 
 ::ng-deep .mat-mdc-form-field .mat-mdc-floating-label {
   color: var(--muted);
+  opacity: .85;
 }
 
 ::ng-deep .mat-mdc-form-field.mat-focused .mat-mdc-floating-label {
   color: var(--primary);
+  opacity: 1;
 }
 
 ::ng-deep .mat-mdc-form-field-outline {
   border-radius: 8px;
 }
+
+/* Compact errors under fields */
+.field-error {
+  margin: 6px 0 10px;
+  line-height: 1.2;
+}
+.field-error small { color: #f87171; } /* red-400 */
 
 /* Card animations */
 .login-card {
@@ -61,14 +70,8 @@
 }
 
 @keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(30px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 /* Button hover effects */
@@ -78,28 +81,11 @@
 }
 
 /* Logo and header styling */
-.logo-container {
-  text-align: center;
-  margin-bottom: 16px;
-}
+.logo-container { text-align: center; margin-bottom: 16px; }
+.app-logo { font-size: 48px; width: 48px; height: 48px; color: var(--primary); }
 
-.app-logo {
-  font-size: 48px;
-  width: 48px;
-  height: 48px;
-  color: var(--primary);
-}
-
-.login-card mat-card-title {
-  text-align: center;
-  margin-bottom: 8px;
-}
-
-.login-card mat-card-subtitle {
-  text-align: center;
-  color: var(--muted);
-  font-size: 0.9rem;
-}
+.login-card mat-card-title { text-align: center; margin-bottom: 8px; }
+.login-card mat-card-subtitle { text-align: center; color: var(--muted); font-size: 0.9rem; }
 
 /* Demo hint styling */
 .demo-hint {
@@ -108,16 +94,10 @@
   padding-top: 20px;
   border-top: 1px solid var(--outline);
 }
-
-.demo-hint p {
-  margin: 0;
-  color: var(--muted);
-}
+.demo-hint p { margin: 0; color: var(--muted); }
 
 /* Button icon spacing */
-.login-btn mat-icon {
-  margin-right: 8px;
-}
+.login-btn mat-icon { margin-right: 8px; }
 
 .register-cta {
   display: flex;
