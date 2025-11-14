@@ -184,7 +184,7 @@ async def read_users_me(current_user: User = Depends(get_current_user)):
 def get_trip(trip_id: int):
     return {"id": trip_id, "name": "Sample Trip"}
 
-@prefix_router.get("/trips/")
+@prefix_router.get("/trips")
 def get_trips():
     return [
     {"id": 1, "name": "Sample Trip 1"},
