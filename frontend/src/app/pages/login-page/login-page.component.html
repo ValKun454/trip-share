@@ -11,7 +11,7 @@
       <form [formGroup]="loginForm" (ngSubmit)="onLogin()">
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Email</mat-label>
-          <input matInput formControlName="email" placeholder="Enter your email">
+          <input matInput formControlName="email">
           <mat-icon matSuffix>email</mat-icon>
         </mat-form-field>
         <div class="field-error" *ngIf="loginForm.get('email')?.touched && loginForm.get('email')?.invalid">
@@ -21,7 +21,7 @@
         
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Password</mat-label>
-          <input matInput type="password" formControlName="password" placeholder="Enter your password">
+          <input matInput type="password" formControlName="password">
           <mat-icon matSuffix>lock</mat-icon>
         </mat-form-field>
         <div class="field-error" *ngIf="loginForm.get('password')?.touched && loginForm.get('password')?.invalid">
