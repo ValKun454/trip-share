@@ -33,6 +33,21 @@ export class ApiService {
     return this.http.get(`${this.base}/me`, this.getAuthHeaders());
   }
 
+  // register user, backend expects { email, username, password }
+  register(payload: { email: string; username: string; password: string }): Observable<any> {
+    return this.http.post(`${this.base}/register`, payload);
+  }
+
+  // resend verification mail 
+  resendVerification(email: string): Observable<any> {
+    return this.http.post(`${this.base}/resend-verification`, { email });
+  }
+
+  // verify email by token (GET /verify?token=...)
+  verifyEmail(token: string): Observable<any> {
+    return this.http.get(`${this.base}/verify`, { params: { token } });
+  }
+
   // poezdki
   getTrips(): Observable<GetTrip[]> {
     return this.http.get<GetTrip[]>(`${this.base}/trips`);
