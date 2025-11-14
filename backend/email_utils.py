@@ -9,10 +9,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # SMTP Configuration from .env
-SMTP_SERVER = os.getenv("SMPT_SERVER")
+SMTP_SERVER = os.getenv("SMTP_SERVER")
 SMTP_PORT = int(os.getenv("SMTP_PORT", 465))
-SMTP_USERNAME = os.getenv("SMPT_USER_NAME")
-SMTP_PASSWORD = os.getenv("SMPT_PASSWORD")
+SMTP_USERNAME = os.getenv("SMTP_USER_NAME")
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
 SENDER_EMAIL = "noreply.tripnshare@gmail.com"
 
 # Token settings
@@ -127,7 +127,7 @@ def send_verification_email(email: str, username: str, verification_token: str):
 ############## TEST ###########################################
 
 if __name__ == "__main__":
-  test_email = "acithikeih@proton.me"
+  test_email = "daniilsergej.mail@gmail.com"
   test_username = "TestUser"
 
   # Create verification token
