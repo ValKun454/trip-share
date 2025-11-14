@@ -26,7 +26,7 @@ engine = create_engine(DATABASE_URL)
 try:
     with engine.begin() as connection:
         print("Connection successful!")
-        connection.execute(text("INSERT INTO test (test_text) VALUES ('Test daasdasta');"))
+        # connection.execute(text("INSERT INTO test (test_text) VALUES ('Test daasdasta');"))
         # connection.execute(text("SELECT * from test;"))
 except Exception as e:
     print(f"Failed to connect: {e}")
