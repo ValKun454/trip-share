@@ -10,10 +10,10 @@ load_dotenv()
 
 # SMTP Configuration from .env
 SMTP_SERVER = os.getenv("SMPT_SERVER")
-SMTP_PORT = int(os.getenv("SMTP_PORT", 587))
+SMTP_PORT = int(os.getenv("SMTP_PORT", 465))
 SMTP_USERNAME = os.getenv("SMPT_USER_NAME")
 SMTP_PASSWORD = os.getenv("SMPT_PASSWORD")
-SENDER_EMAIL = "12qwarew2qs@gmail.com"  # Update this with your verified SES email
+SENDER_EMAIL = "noreply.tripnshare@gmail.com"
 
 # Token settings
 SECRET_KEY = os.getenv("SECRET_KEY")
@@ -114,11 +114,33 @@ def send_verification_email(email: str, username: str, verification_token: str):
 
     # Send email
     try:
-        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
-            server.starttls()
+        with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT) as server:
             server.login(SMTP_USERNAME, SMTP_PASSWORD)
             server.send_message(msg)
         return True
     except Exception as e:
         print(f"Failed to send email: {e}")
         return False
+
+
+
+############## TEST ###########################################
+
+if __name__ == "__main__":
+  test_email = "acithikeih@proton.me"
+  test_username = "TestUser"
+
+  # Create verification token
+  token = create_verification_token(test_email)
+  print(f"Generated token: {token}")
+
+  # Send verification email
+  result = send_verification_email(test_email, test_username, token)
+
+  if result:
+      print("✓ Verification email sent successfully!")
+  else:
+      print("✗ Failed to send verification email")
+
+##################################################################
+

@@ -1,17 +1,24 @@
 import smtplib
 from email.mime.text import MIMEText
 
-smtp_server = "email-smtp.eu-north-1.amazonaws.com"
-smtp_port = 587
-smtp_username = "AKIARVLSN67PDGFYPXOO"
-smtp_password = "BBS89rHQ0HTIzul3MTTJJRnlgRDoMF1Pt7qlZwmNaZza"
+smtp_server = "smtp.gmail.com"
+smtp_port = 465
+smtp_username = "noreply.tripnshare@gmail.com"
+smtp_password = "btiy qukm enyn tkbe"
 
 msg = MIMEText("Marisa")
 msg['Subject'] = "Test Email"
-msg['From'] = "@gmail.com"
-msg['To'] = "@gmail.com"
+msg['From'] = "noreply.tripnshare@gmail.com"
+msg['To'] = "rekrut.fedosenko@gmail.com"
 
-with smtplib.SMTP(smtp_server, smtp_port) as server:
-    server.starttls()
-    server.login(smtp_username, smtp_password)
-    server.send_message(msg)
+try:
+    with smtplib.SMTP_SSL(smtp_server, smtp_port) as server:
+        print("Connected to SMTP server")
+        server.login(smtp_username, smtp_password)
+        print("Login successful")
+        server.send_message(msg)
+        print("Email sent successfully!")
+except Exception as e:
+    print(f"Error: {type(e).__name__}: {e}")
+
+
