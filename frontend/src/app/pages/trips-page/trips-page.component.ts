@@ -1,6 +1,6 @@
 import { Component, inject, OnInit } from "@angular/core";
 import { CommonModule, NgFor, NgIf } from "@angular/common";
-import { ReactiveFormsModule, FormBuilder, Validators } from "@angular/forms";
+import { ReactiveFormsModule, FormBuilder, Validators, ValidatorFn, AbstractControl } from "@angular/forms";
 import { MatCardModule } from "@angular/material/card";
 import { MatButtonModule } from "@angular/material/button";
 import { MatIconModule } from "@angular/material/icon";
@@ -10,18 +10,42 @@ import { MatToolbarModule } from "@angular/material/toolbar";
 import { MatFormFieldModule } from "@angular/material/form-field";
 import { MatDatepickerModule } from "@angular/material/datepicker";
 import { MatNativeDateModule } from "@angular/material/core";
+import { MAT_DATE_FORMATS, MAT_DATE_LOCALE } from "@angular/material/core";
 import { RouterModule } from "@angular/router";
 import { ApiService } from "../../core/services/api.service";
 import { GetTrip, CreateTrip } from "../../core/models/trip.model";
 
+const PL_DATE_FORMATS = {
+  parse: { dateInput: 'DD.MM.YYYY' },
+  display: {
+    dateInput: 'DD.MM.YYYY',
+    monthYearLabel: 'MMM YYYY',
+    dateA11yLabel: 'DD.MM.YYYY',
+    monthYearA11yLabel: 'MMMM YYYY'
+  }
+};
+
+function startBeforeEnd(): ValidatorFn {
+  return (group: AbstractControl) => {
+    const start = group.get('startDate')?.value as Date | null;
+    const end = group.get('endDate')?.value as Date | null;
+    if (!start || !end) return null;
+    return start.getTime() <= end.getTime() ? null : { rangeInvalid: true };
+  };
+}
+
 @Component({
   selector: "app-trips-page",
   standalone: true,
+  providers: [
+    { provide: MAT_DATE_LOCALE, useValue: 'pl-PL' },
+    { provide: MAT_DATE_FORMATS, useValue: PL_DATE_FORMATS }
+  ],
   imports: [
     CommonModule,
     NgFor,
     NgIf,
-    
+
     ReactiveFormsModule,
     MatCardModule,
     MatButtonModule,
@@ -44,11 +68,13 @@ export class TripsPageComponent implements OnInit {
   summaries: Record<string, string> = {};
 
   showCreate = false;
+
   form = inject(FormBuilder).group({
     name: ['', [Validators.required, Validators.minLength(2)]],
-    dates: [''],
+    startDate: [''],
+    endDate: [''],
     participants: ['']
-  });
+  }, { validators: startBeforeEnd() });
 
   private api = inject(ApiService);
 
@@ -62,7 +88,6 @@ export class TripsPageComponent implements OnInit {
     this.api.getTrips().subscribe({
       next: (list) => {
         this.trips = list;
-        // load summaries for each trip (best-effort)
         this.trips.forEach(t => this.loadSummary(String(t.id)));
         this.loading = false;
       },
@@ -79,31 +104,39 @@ export class TripsPageComponent implements OnInit {
     if (!this.showCreate) this.form.reset();
   }
 
+  private toDDMMYYYY(d: unknown): string {
+    if (!d) return '';
+    const date = d instanceof Date ? d : new Date(d as any);
+    if (isNaN(date.getTime())) return String(d).trim();
+    const dd = String(date.getDate()).padStart(2, '0');
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const yy = date.getFullYear();
+    return `${dd}.${mm}.${yy}`;
+  }
+
   createTrip() {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
 
-    const val = this.form.value as any || { name: '', dates: '', participants: '' };
+    const val = this.form.value as any;
     const name = (val.name ?? '').toString().trim();
-    
-    // Handle date: may be a Date object from datepicker or a string
+
+    const start = this.toDDMMYYYY(val.startDate);
+    const end = this.toDDMMYYYY(val.endDate);
     let datesStr = '';
-    const datesVal = val.dates;
-    if (datesVal) {
-      if (datesVal instanceof Date) {
-        datesStr = datesVal.toISOString().split('T')[0]; // YYYY-MM-DD
-      } else {
-        datesStr = datesVal.toString().trim();
-      }
-    }
-    
+    if (start && end) datesStr = `${start} – ${end}`;
+    else if (start)   datesStr = start;
+    else if (end)     datesStr = end;
+
     const participantsRaw = (val.participants ?? '').toString();
     const dto: CreateTrip = {
       name,
-      dates: datesStr || '',
-      participants: participantsRaw ? participantsRaw.split(',').map((s: string) => s.trim()).filter((s: string) => !!s) : []
+      dates: datesStr,
+      participants: participantsRaw
+        ? participantsRaw.split(',').map((s: string) => s.trim()).filter((s: string) => !!s)
+        : []
     };
 
     this.api.createTrip(dto).subscribe({
@@ -119,7 +152,6 @@ export class TripsPageComponent implements OnInit {
   }
 
   loadSummary(tripId: string) {
-    // best-effort: try /api/trips/{id}/summary via ApiService (if implemented)
     if (!this.api.getTripSummary) {
       this.summaries[tripId] = '—';
       return;

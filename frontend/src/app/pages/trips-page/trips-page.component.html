@@ -14,21 +14,39 @@
   <div *ngIf="showCreate" class="create-panel">
     <h3>Create a trip</h3>
     <form [formGroup]="form" (ngSubmit)="createTrip()">
-      <mat-form-field appearance="outline" class="full-width">
-        <mat-label>Trip name</mat-label>
-        <input matInput formControlName="name" placeholder="Weekend in Lisbon">
-      </mat-form-field>
 
       <mat-form-field appearance="outline" class="full-width">
-        <mat-label>Dates (optional)</mat-label>
-        <input matInput [matDatepicker]="picker" formControlName="dates" placeholder="Choose a date">
-        <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
-        <mat-datepicker #picker></mat-datepicker>
+        <mat-label>Trip name</mat-label>
+        <input matInput formControlName="name">
       </mat-form-field>
+
+      <div class="dates-row" style="display:flex; gap:12px; align-items:flex-start;">
+        <mat-form-field appearance="outline" style="flex:1;">
+          <mat-label>Start date (optional)</mat-label>
+          <input
+            matInput
+            [matDatepicker]="pickerStart"
+            formControlName="startDate"
+            [max]="form.value.endDate || null">
+          <mat-datepicker-toggle matSuffix [for]="pickerStart"></mat-datepicker-toggle>
+          <mat-datepicker #pickerStart></mat-datepicker>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" style="flex:1;">
+          <mat-label>End date (optional)</mat-label>
+          <input
+            matInput
+            [matDatepicker]="pickerEnd"
+            formControlName="endDate"
+            [min]="form.value.startDate || null">
+          <mat-datepicker-toggle matSuffix [for]="pickerEnd"></mat-datepicker-toggle>
+          <mat-datepicker #pickerEnd></mat-datepicker>
+        </mat-form-field>
+      </div>
 
       <mat-form-field appearance="outline" class="full-width">
         <mat-label>Participants (comma separated)</mat-label>
-        <input matInput formControlName="participants" placeholder="user1, user2">
+        <input matInput formControlName="participants">
         <mat-hint>Use user IDs or emails</mat-hint>
       </mat-form-field>
 
@@ -39,7 +57,9 @@
     </form>
   </div>
 
-  <div *ngIf="loading" class="loading"><mat-progress-spinner mode="indeterminate"></mat-progress-spinner></div>
+  <div *ngIf="loading" class="loading">
+    <mat-progress-spinner mode="indeterminate"></mat-progress-spinner>
+  </div>
 
   <div *ngIf="error" class="error">
     <p>{{ error }}</p>
@@ -49,12 +69,12 @@
   <div class="grid" *ngIf="!loading && !error">
     <mat-card *ngFor="let t of trips" class="trip">
       <mat-card-header>
-  <div mat-card-avatar class="avatar">{{ t.name.charAt(0) }}</div>
+        <div mat-card-avatar class="avatar">{{ t.name.charAt(0) }}</div>
         <mat-card-title>{{ t.name }}</mat-card-title>
         <mat-card-subtitle>{{ t.dates || '—' }}</mat-card-subtitle>
       </mat-card-header>
       <mat-card-content>
-  <div class="meta">Participants: <strong>{{ t.participants.length || 0 }}</strong></div>
+        <div class="meta">Participants: <strong>{{ t.participants.length || 0 }}</strong></div>
         <div class="summary">Summary: <strong>{{ summaries[t.id] || '—' }}</strong></div>
       </mat-card-content>
       <mat-card-actions align="end">
