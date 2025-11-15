@@ -5,6 +5,7 @@ import { ExpensesSummaryPageComponent } from './pages/expenses-summary-page/expe
 import { ProfilePageComponent } from './pages/profile-page/profile-page.component';
 import { NotFoundPageComponent } from './pages/not-found-page/not-found-page.component';
 import { ContactUsPageComponent } from './pages/contact-us-page/contact-us-page.component';
+import { FriendsPageComponent } from './pages/friends-page/friends-page.component';
 import { LoginPageComponent } from './pages/login-page/login-page.component';
 import { RegisterPageComponent } from './pages/register-page/register-page.component';
 import { ShellComponent } from './layout/shell/shell.component';
@@ -42,8 +43,9 @@ export const routes: Routes = [
     canActivate: [authGuard],
     children: [
       { path: 'trips', component: TripsPageComponent, title: 'Trips' },
-          { path: 'expenses', component: ExpensesSummaryPageComponent, title: 'Total Expenses' },
+      { path: 'expenses', component: ExpensesSummaryPageComponent, title: 'Total Expenses' },
       { path: 'profile', component: ProfilePageComponent, title: 'Profile' },
+      { path: 'friends', component: FriendsPageComponent, title: 'Friends' },
       { path: 'contact', component: ContactUsPageComponent, title: 'Contact Us' },
     ]
   },

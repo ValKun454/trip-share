@@ -50,30 +50,30 @@ export class ApiService {
 
   // poezdki
   getTrips(): Observable<GetTrip[]> {
-    return this.http.get<GetTrip[]>(`${this.base}/trips`);
+    return this.http.get<GetTrip[]>(`${this.base}/trips`, this.getAuthHeaders());
   }
   getTrip(id: string): Observable<GetTrip> {
-    return this.http.get<GetTrip>(`${this.base}/trips/${id}`);
+    return this.http.get<GetTrip>(`${this.base}/trips/${id}`, this.getAuthHeaders());
   }
-  createTrip(dto: CreateTrip): Observable<GetTrip> {
-    return this.http.post<GetTrip>(`${this.base}/trips`, dto);
+  createTrip(dto: CreateTrip): Observable<any> {
+    return this.http.post<any>(`${this.base}/trips`, dto, this.getAuthHeaders());
   }
 
   // traty
   getExpenses(tripId: string): Observable<Expense[]> {
-    return this.http.get<Expense[]>(`${this.base}/trips/${tripId}/expenses`);
+    return this.http.get<Expense[]>(`${this.base}/trips/${tripId}/expenses`, this.getAuthHeaders());
   }
   createExpense(tripId: string, exp: Omit<Expense, 'id'|'tripId'>): Observable<Expense> {
-    return this.http.post<Expense>(`${this.base}/trips/${tripId}/expenses`, exp);
+    return this.http.post<Expense>(`${this.base}/trips/${tripId}/expenses`, exp, this.getAuthHeaders());
   }
 
   // identyfikujemy usera po UID
   getDebtsSummaryByUid(uid: string): Observable<DebtsSummary> {
-    return this.http.get<DebtsSummary>(`${this.base}/debts/summary?uid=${encodeURIComponent(uid)}`);
+    return this.http.get<DebtsSummary>(`${this.base}/debts/summary?uid=${encodeURIComponent(uid)}`, this.getAuthHeaders());
   }
 
   // Trip summary endpoint (expected to return settlement / summary data for a trip)
   getTripSummary(tripId: string): Observable<any> {
-    return this.http.get<any>(`${this.base}/trips/${encodeURIComponent(tripId)}/summary`);
+    return this.http.get<any>(`${this.base}/trips/${encodeURIComponent(tripId)}/summary`, this.getAuthHeaders());
   }
 }

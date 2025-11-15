@@ -47,6 +47,18 @@
             <span matListItemTitle>Profile</span>
           </a>
         </ng-template>
+
+        <a mat-list-item routerLink="/friends" routerLinkActive="active"
+          *ngIf="!(isHandset$ | async); else friendsMobile">
+          <mat-icon matListItemIcon>people</mat-icon>
+          <span matListItemTitle>Friends</span>
+        </a>
+        <ng-template #friendsMobile>
+          <a mat-list-item routerLink="/friends" routerLinkActive="active" (click)="snav.close()">
+            <mat-icon matListItemIcon>people</mat-icon>
+            <span matListItemTitle>Friends</span>
+          </a>
+        </ng-template>
           
           <a mat-list-item routerLink="/contact" routerLinkActive="active"
              *ngIf="!(isHandset$ | async); else contactMobile">

@@ -29,6 +29,7 @@ function startBeforeEnd(): ValidatorFn {
   return (group: AbstractControl) => {
     const start = group.get('startDate')?.value as Date | null;
     const end = group.get('endDate')?.value as Date | null;
+    // Only validate if both dates are present
     if (!start || !end) return null;
     return start.getTime() <= end.getTime() ? null : { rangeInvalid: true };
   };
@@ -87,7 +88,13 @@ export class TripsPageComponent implements OnInit {
     this.error = null;
     this.api.getTrips().subscribe({
       next: (list) => {
-        this.trips = list;
+        // Backend might return with 'id' or needs ID mapping from response
+        this.trips = list.map(t => ({
+          id: String(t.id || ''),
+          name: t.name || '',
+          dates: t.dates || '',
+          participants: t.participants || []
+        }));
         this.trips.forEach(t => this.loadSummary(String(t.id)));
         this.loading = false;
       },
@@ -115,8 +122,11 @@ export class TripsPageComponent implements OnInit {
   }
 
   createTrip() {
-    if (this.form.invalid) {
+    // Only require name field to be valid; dates and participants are optional
+    const nameControl = this.form.get('name');
+    if (!nameControl || !nameControl.valid) {
       this.form.markAllAsTouched();
+      console.warn('Form invalid: name is required');
       return;
     }
 
@@ -139,14 +149,23 @@ export class TripsPageComponent implements OnInit {
         : []
     };
 
+    console.log('Creating trip with DTO:', dto);
+
     this.api.createTrip(dto).subscribe({
-      next: () => {
-        this.toggleCreate();
-        this.loadTrips();
+      next: (response: any) => {
+        console.log('Trip created successfully:', response);
+        // Handle both tripId and id field names from backend response
+        const tripId = response?.tripId || response?.id;
+        if (tripId) {
+          this.toggleCreate();
+          this.loadTrips();
+        } else {
+          this.error = 'Trip created but response format unexpected';
+        }
       },
       error: (e) => {
         console.error('Create trip failed', e);
-        this.error = 'Failed to create trip';
+        this.error = e?.error?.detail || 'Failed to create trip';
       }
     });
   }
