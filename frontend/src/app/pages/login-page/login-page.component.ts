@@ -30,6 +30,7 @@ export class LoginPageComponent {
   readonly DEMO_PASSWORD = 'demo123';
   isLoading = false;
   serverError: string | null = null;
+  hidePassword = true;
 
   constructor(
     private fb: FormBuilder,
@@ -46,6 +47,10 @@ export class LoginPageComponent {
   goRegister() {
     // nawigacja do rejestracji
     this.router.navigateByUrl('/register');
+  }
+
+  togglePasswordVisibility() {
+    this.hidePassword = !this.hidePassword;
   }
 
   onLogin() {
