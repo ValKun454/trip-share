@@ -52,19 +52,40 @@ export class ApiService {
   getTrips(): Observable<GetTrip[]> {
     return this.http.get<GetTrip[]>(`${this.base}/trips`, this.getAuthHeaders());
   }
-  getTrip(id: string): Observable<GetTrip> {
+  getTrip(id: number): Observable<GetTrip> {
     return this.http.get<GetTrip>(`${this.base}/trips/${id}`, this.getAuthHeaders());
   }
+  /**
+   * Create trip - send snake_case field names expected by backend
+   * Backend schema TripCreate: { name, description, participants }
+   */
   createTrip(dto: CreateTrip): Observable<any> {
-    return this.http.post<any>(`${this.base}/trips`, dto, this.getAuthHeaders());
+    const payload = {
+      name: dto.name,
+      description: dto.description || '',
+      participants: dto.participants || []
+    };
+    return this.http.post<any>(`${this.base}/trips`, payload, this.getAuthHeaders());
   }
 
   // traty
-  getExpenses(tripId: string): Observable<Expense[]> {
+  getExpenses(tripId: number): Observable<Expense[]> {
     return this.http.get<Expense[]>(`${this.base}/trips/${tripId}/expenses`, this.getAuthHeaders());
   }
-  createExpense(tripId: string, exp: Omit<Expense, 'id'|'tripId'>): Observable<Expense> {
-    return this.http.post<Expense>(`${this.base}/trips/${tripId}/expenses`, exp, this.getAuthHeaders());
+  /**
+   * Create expense - send snake_case field names expected by backend
+   * Backend schema ExpenseCreate: { is_scanned, name, description, payer_id, is_even_division, total_cost }
+   */
+  createExpense(tripId: number, exp: Omit<Expense, 'id'|'createdAt'>): Observable<Expense> {
+    const payload = {
+      is_scanned: exp.isScanned,
+      name: exp.name,
+      description: exp.description || '',
+      payer_id: exp.payerId,
+      is_even_division: exp.isEvenDivision,
+      total_cost: exp.totalCost
+    };
+    return this.http.post<Expense>(`${this.base}/trips/${tripId}/expenses`, payload, this.getAuthHeaders());
   }
 
   // identyfikujemy usera po UID

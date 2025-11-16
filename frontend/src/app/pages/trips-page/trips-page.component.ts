@@ -63,7 +63,8 @@ function startBeforeEnd(): ValidatorFn {
   styleUrls: ["./trips-page.component.css"]
 })
 export class TripsPageComponent implements OnInit {
-  trips: GetTrip[] = [];
+  // Display model: extends GetTrip with formatted dates string for UI
+  trips: Array<GetTrip & { dates: string }> = [];
   loading = false;
   error: string | null = null;
   summaries: Record<string, string> = {};
@@ -83,17 +84,29 @@ export class TripsPageComponent implements OnInit {
     this.loadTrips();
   }
 
+  /** Format ISO date string to DD.MM.YYYY format for display */
+  private formatDates(isoDateString: string): string {
+    try {
+      const date = new Date(isoDateString);
+      if (isNaN(date.getTime())) return '—';
+      const dd = String(date.getDate()).padStart(2, '0');
+      const mm = String(date.getMonth() + 1).padStart(2, '0');
+      const yyyy = date.getFullYear();
+      return `${dd}.${mm}.${yyyy}`;
+    } catch {
+      return '—';
+    }
+  }
+
   loadTrips() {
     this.loading = true;
     this.error = null;
     this.api.getTrips().subscribe({
       next: (list) => {
-        // Backend might return with 'id' or needs ID mapping from response
+        // Backend returns trips with id, name, createdAt, creatorId, participants, description
         this.trips = list.map(t => ({
-          id: String(t.id || ''),
-          name: t.name || '',
-          dates: t.dates || '',
-          participants: t.participants || []
+          ...t,
+          dates: this.formatDates(t.createdAt) // Add formatted dates for display
         }));
         this.trips.forEach(t => this.loadSummary(String(t.id)));
         this.loading = false;
@@ -132,21 +145,21 @@ export class TripsPageComponent implements OnInit {
 
     const val = this.form.value as any;
     const name = (val.name ?? '').toString().trim();
+    const participantsRaw = (val.participants ?? '').toString().trim();
 
-    const start = this.toDDMMYYYY(val.startDate);
-    const end = this.toDDMMYYYY(val.endDate);
-    let datesStr = '';
-    if (start && end) datesStr = `${start} – ${end}`;
-    else if (start)   datesStr = start;
-    else if (end)     datesStr = end;
+    // Parse participants as comma-separated user IDs (convert to numbers)
+    const participants: number[] = participantsRaw
+      ? participantsRaw.split(',').map((s: string) => {
+        const num = parseInt(s.trim(), 10);
+        return isNaN(num) ? 0 : num;
+      }).filter((num: number) => num > 0)
+      : [];
 
-    const participantsRaw = (val.participants ?? '').toString();
+    // Create trip DTO - backend expects { name, description, participants }
     const dto: CreateTrip = {
       name,
-      dates: datesStr,
-      participants: participantsRaw
-        ? participantsRaw.split(',').map((s: string) => s.trim()).filter((s: string) => !!s)
-        : []
+      description: `Trip from ${new Date().toLocaleDateString()}`, // Auto-generate simple description
+      participants
     };
 
     console.log('Creating trip with DTO:', dto);
@@ -154,8 +167,8 @@ export class TripsPageComponent implements OnInit {
     this.api.createTrip(dto).subscribe({
       next: (response: any) => {
         console.log('Trip created successfully:', response);
-        // Handle both tripId and id field names from backend response
-        const tripId = response?.tripId || response?.id;
+        // Backend returns full Trip object with id field
+        const tripId = response?.id;
         if (tripId) {
           this.toggleCreate();
           this.loadTrips();

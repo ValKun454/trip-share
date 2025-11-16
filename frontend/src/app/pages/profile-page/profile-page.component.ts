@@ -16,19 +16,17 @@ import { UpperCasePipe } from '@angular/common';
   styleUrls: ['./profile-page.component.css']
 })
 export class ProfilePageComponent {
-  // pobranie usera (mock)
   private auth = inject(AuthService);
-  user = this.auth.getCurrentUser() || { username: '', email: '', uid: '' };
+  user = this.auth.getCurrentUser() || { id: 0, username: '', email: '', isVerified: false };
 
-  // kontrolka do nicku
+  // Use username from backend response
   nickname = new FormControl<string>(this.user.username || '', { nonNullable: true });
 
-  // symulacja zapisu
   save() {
     console.log('profile save ->', {
+      id: this.user.id,
       email: this.user.email,
       nickname: this.nickname.value,
-      uid: this.user.uid,
     });
   }
 }

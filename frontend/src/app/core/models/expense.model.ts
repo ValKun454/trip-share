@@ -1,9 +1,16 @@
+/**
+ * Backend Expense response model - maps to backend schemas.Expense
+ * Uses Pydantic aliases: isScanned, createdAt, tripId, payerId, isEvenDivision
+ */
 export interface Expense {
-  id: string;
-  tripId: string;
-  title: string;
-  amount: number;              // raksy
-  paidBy: string;              // user id/name
-  included: string[];          // skolko?
-  date: string;                // nu eto data
+  id: number;
+  isScanned: boolean;
+  name: string; // Not 'title'
+  description?: string | null;
+  createdAt: string; // ISO format datetime
+  tripId: number;
+  payerId: number; // User ID, not name/string
+  isEvenDivision: boolean;
+  totalCost: number | string; // Decimal from backend (handle as string or number)
+  positions: number[]; // List of user IDs who are included in this expense
 }

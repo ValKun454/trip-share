@@ -25,12 +25,23 @@ export class ExpensesSummaryPageComponent {
 
   ngOnInit() {
     const user = this.auth.getCurrentUser();
-    if (user?.uid) {
-      this.api.getDebtsSummaryByUid(user.uid).subscribe({
-        next: (res) => { this.data = res; this.loading = false; },
-        error: () => { this.data = []; this.loading = false; }
+    // Backend doesn't have /debts/summary endpoint yet
+    // Load all trips and build summary from expenses data
+    if (user?.id) {
+      this.api.getTrips().subscribe({
+        next: (trips) => {
+          // TODO: Calculate debts from trips + expenses when backend provides full data
+          this.data = [];
+          this.loading = false;
+        },
+        error: () => {
+          this.data = [];
+          this.loading = false;
+        }
       });
     } else {
+      this.data = [];
+      this.loading = false;
     }
   }
 }
