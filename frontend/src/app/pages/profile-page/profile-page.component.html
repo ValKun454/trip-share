@@ -14,30 +14,33 @@
     </div>
 
     <div class="section">
-      <div class="row">
-        <div class="label">Email</div>
-        <div class="value">{{ user.email || '—' }}</div>
-      </div>
-
+      <!-- Username: editable field at top -->
       <div class="row editable">
-        <div class="label">Nickname</div>
+        <div class="label">Username <span class="editable-badge">Editable</span></div>
         <input
           class="nick-input"
           [formControl]="nickname"
-          placeholder="np. CR7"
-          maxlength="24"
+          placeholder="Enter your username"
+          maxlength="50"
         />
       </div>
 
+      <!-- Email: read-only -->
       <div class="row">
-        <div class="label">uID</div>
-        <div class="value uid">{{ user.uid || '—' }}</div>
+        <div class="label">Email <span class="read-only-badge">Read-only</span></div>
+        <div class="value">{{ user.email || '—' }}</div>
+      </div>
+
+      <!-- User ID: read-only -->
+      <div class="row">
+        <div class="label">User ID <span class="read-only-badge">Read-only</span></div>
+        <div class="value uid">{{ user.id || '—' }}</div>
       </div>
     </div>
 
     <div class="actions">
-      <button mat-raised-button color="primary" (click)="save()">
-        Save
+      <button mat-raised-button color="primary" (click)="save()" [disabled]="nickname.pristine">
+        Save Changes
       </button>
     </div>
 
