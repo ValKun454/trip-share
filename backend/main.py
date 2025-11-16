@@ -7,7 +7,7 @@ import uvicorn
 from datetime import timedelta
 from schemas import *
 from auth import authenticate_user, create_access_token, get_current_user, get_db, ACCESS_TOKEN_EXPIRE_MINUTES, get_password_hash
-from models import User, Trip as TripModel, Participant
+from models import User, Trip as TripModel, Participant, Expense as ExpenseModel, Position
 from email_utils import create_verification_token, verify_verification_token, send_verification_email
 
 
@@ -291,25 +291,116 @@ def create_trip(
 
 
 
-@prefix_router.get("/trips/{trip_id}/expenses")
-def get_expenses(trip_id: int):
-    return [
-    {"id": 1,"tripId": trip_id , "title": "Sample Expense"},
-    {"id": 2,"tripId": trip_id , "title": "Sample Expense 2"}
-    ]
+@prefix_router.get("/trips/{trip_id}/expenses", response_model=list[Expense])
+def get_expenses(
+    trip_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get all expenses for a specific trip
+    Only returns expenses if current user has access to the trip
+    """
+    # First verify the trip exists and user has access
+    trip = db.query(TripModel).filter(TripModel.id == trip_id).first()
+
+    if not trip:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Trip not found"
+        )
+
+    # Check if user has access to this trip
+    is_creator = trip.creator_id == current_user.id
+    is_participant = db.query(Participant).filter(
+        Participant.trip_id == trip_id,
+        Participant.user_id == current_user.id
+    ).first() is not None
+
+    if not is_creator and not is_participant:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You don't have access to this trip"
+        )
+
+    # Get all expenses for this trip
+    expenses = db.query(ExpenseModel).filter(
+        ExpenseModel.trip_id == trip_id
+    ).all()
+
+    return expenses
 
 
+@prefix_router.post("/trips/{trip_id}/expenses", response_model=ExpenseCreateResponse, status_code=status.HTTP_201_CREATED)
+def create_expense(
+    trip_id: int,
+    data: ExpenseCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Create a new expense for a trip
+    Only allowed if current user has access to the trip
+    """
+    # Verify the trip exists and user has access
+    trip = db.query(TripModel).filter(TripModel.id == trip_id).first()
 
-@prefix_router.post("/trips/{trip_id}/expenses", response_model=ExpenseCreateResponse, status_code=201)
-def create_expense(data: ExpenseCreate):
-    return {
-        'id': 456,
-        'tripId': data.trip_id,
-        'title': data.title,
-        'amount': data.amount,
-        'paidBy': data.paid_by,
-        'included': data.included
-    }
+    if not trip:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Trip not found"
+        )
+
+    # Check if user has access to this trip
+    is_creator = trip.creator_id == current_user.id
+    is_participant = db.query(Participant).filter(
+        Participant.trip_id == trip_id,
+        Participant.user_id == current_user.id
+    ).first() is not None
+
+    if not is_creator and not is_participant:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You don't have access to this trip"
+        )
+
+    # Verify payer exists and is part of the trip
+    payer = db.query(User).filter(User.id == data.payer_id).first()
+    if not payer:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Payer with id {data.payer_id} not found"
+        )
+
+    # Check if payer is creator or participant of the trip
+    payer_is_creator = trip.creator_id == data.payer_id
+    payer_is_participant = db.query(Participant).filter(
+        Participant.trip_id == trip_id,
+        Participant.user_id == data.payer_id
+    ).first() is not None
+
+    if not payer_is_creator and not payer_is_participant:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Payer must be a participant of the trip"
+        )
+
+    # Create the expense
+    new_expense = ExpenseModel(
+        is_scanned=data.is_scanned,
+        name=data.name,
+        description=data.description,
+        trip_id=trip_id,
+        payer_id=data.payer_id,
+        is_even_division=data.is_even_division,
+        total_cost=data.total_cost
+    )
+
+    db.add(new_expense)
+    db.commit()
+    db.refresh(new_expense)
+
+    return new_expense
 
 app.include_router(prefix_router)
 
@@ -323,26 +414,3 @@ if __name__ == "__main__":
         port=8000,
         reload=True  # Auto-reload on code changes
     )
-
-
-
-"""  // poezdki
-  getTrips(): Observable<Trip[]> { ----- done 
-    return this.http.get<Trip[]>(`${this.base}/trips`);
-  }
-  getTrip(id: string): Observable<Trip> { ---- done
-    return this.http.get<Trip>(`${this.base}/trips/${id}`);
-  }
-  createTrip(dto: CreateTripDto): Observable<Trip> {
-    return this.http.post<Trip>(`${this.base}/trips`, dto);
-  }
-
-  // traty
-  getExpenses(tripId: string): Observable<Expense[]> {
-    return this.http.get<Expense[]>(`${this.base}/trips/${tripId}/expenses`);
-  }
-  createExpense(tripId: string, exp: Omit<Expense, 'id'|'tripId'>): Observable<Expense> {
-    return this.http.post<Expense>(`${this.base}/trips/${tripId}/expenses`, exp);
-  }
-}
-"""

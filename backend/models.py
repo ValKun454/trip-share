@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, Boolean, DateTime, ForeignKey, Double
+from sqlalchemy import Column, String, Integer, Boolean, DateTime, ForeignKey, Numeric
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 import datetime
@@ -60,18 +60,21 @@ class Expense(Base):
     trip_id = Column(Integer, ForeignKey('trips.id'))
     payer_id = Column(Integer, ForeignKey('users.id'))
     is_even_division = Column(Boolean, default=True, nullable=False)
-    total_cost = Column(Double, index=True, nullable=False)
+    total_cost = Column(Numeric(precision=20, scale=2), index=True, nullable=False)
 
     trip = relationship('Trip', back_populates='expenses')
     payer = relationship('User', back_populates='expenses')
-    positions = relationship('Position', back_populates='expense')
+    _positions = relationship('Position', back_populates='expense')
+
+    @property
+    def positions(self) -> list[int]:
+        return [p.participant_id for p in self._positions]
 
 class Position(Base):
     __tablename__ = 'positions'
 
-    id = Column(Integer, primary_key=True, index=True)
-    expense_id = Column(Integer, ForeignKey('expenses.id'))
-    participant_id = Column(Integer, ForeignKey('users.id'))
+    expense_id = Column(Integer, ForeignKey('expenses.id'), primary_key=True)
+    participant_id = Column(Integer, ForeignKey('users.id'), primary_key=True)
 
-    expense = relationship('Expense', back_populates='positions')
+    expense = relationship('Expense', back_populates='_positions')
     participant = relationship('User', back_populates='positions')

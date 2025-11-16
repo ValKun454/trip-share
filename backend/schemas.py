@@ -1,5 +1,6 @@
 from pydantic import BaseModel, EmailStr, Field, ConfigDict
 from datetime import datetime
+from decimal import Decimal
 
 # User schemas
 class UserRegister(BaseModel):
@@ -55,33 +56,37 @@ class TripCreateResponse(BaseModel):
 
 
 class Expense(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, from_attributes=True)
 
-    id: str
-    trip_id: str = Field(alias="tripId")
-    title: str
-    amount: float
-    paid_by: str = Field(alias="paidBy")
-    included: list[str]
-    date: str
+    id: int
+    is_scanned: bool = Field(alias="isScanned")
+    name: str
+    description: str
+    created_at: datetime = Field(alias="createdAt")
+    trip_id: int = Field(alias="tripId")
+    payer_id: int = Field(alias="payerId")
+    is_even_division: bool = Field(alias="isEvenDivision")
+    total_cost: Decimal
+    positions: list[int]
 
 class ExpenseCreate(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
-
-    trip_id: str = Field(alias="tripId")
-    title: str
-    amount: float
-    paid_by: str = Field(alias="paidBy")
-    included: list[str]
-    date: str
+    is_scanned: bool = Field(alias="isScanned")
+    name: str
+    description: str
+    payer_id: int = Field(alias="payerId")
+    is_even_division: bool = Field(alias="isEvenDivision")
+    total_cost: Decimal
 
 class ExpenseCreateResponse(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     id: int
+    is_scanned: bool = Field(alias="isScanned")
+    name: str
+    description: str
+    created_at: datetime = Field(alias="createdAt")
     trip_id: int = Field(alias="tripId")
-    title: str
-    amount: float
-    paid_by: str = Field(alias="paidBy")
-    included: list[str]
-    date: str
+    payer_id: int = Field(alias="payerId")
+    is_even_division: bool = Field(alias="isEvenDivision")
+    total_cost: Decimal
+    positions: list[int]
