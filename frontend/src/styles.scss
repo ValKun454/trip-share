@@ -55,3 +55,24 @@ h1,h2,h3,h4 { color: var(--text); }
   border-radius: 12px;
   margin: 2px 8px;
 }
+
+/* Hide scrollbars globally (macOS overlay + Windows) */
+/* -ms-overflow-style: none for IE/Edge; scrollbar-width: none for Firefox */
+* {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+/* WebKit browsers (Chrome, Safari) */
+*::-webkit-scrollbar {
+  width: 0px;
+  height: 0px;
+  display: none;
+}
+
+/* Also hide for specific material containers to reduce layout shifts */
+.mat-drawer-container::-webkit-scrollbar,
+.mat-drawer-content::-webkit-scrollbar,
+.content::-webkit-scrollbar {
+  display: none !important;
+}
