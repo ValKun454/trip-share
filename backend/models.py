@@ -55,7 +55,7 @@ class Expense(Base):
     id = Column(Integer, primary_key=True, index=True)
     is_scanned = Column(Boolean, default=True, nullable=False)
     name = Column(String, nullable=False)
-    description = Column(String, unique=True, index=True, nullable=True)
+    description = Column(String, index=True, nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
     trip_id = Column(Integer, ForeignKey('trips.id'))
     payer_id = Column(Integer, ForeignKey('users.id'))
