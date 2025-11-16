@@ -14,3 +14,15 @@ export interface Expense {
   totalCost: number | string; // Decimal from backend (handle as string or number)
   positions: number[]; // List of user IDs who are included in this expense
 }
+
+/**
+ * DTO for creating an expense - only the fields needed to send to backend
+ */
+export interface ExpenseCreate {
+  isScanned: boolean;
+  name: string;
+  description?: string;
+  payerId: number;
+  isEvenDivision: boolean;
+  totalCost: number | string;
+}

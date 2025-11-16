@@ -1,0 +1,139 @@
+<mat-toolbar color="primary" class="toolbar">
+  <button mat-icon-button aria-label="back" (click)="goBack()">
+    <mat-icon>arrow_back</mat-icon>
+  </button>
+  <span class="title">{{ trip?.name || 'Trip Details' }}</span>
+  <span class="spacer"></span>
+  <button mat-flat-button color="accent" (click)="toggleAddExpense()" *ngIf="!showAddExpense">
+    <mat-icon>add</mat-icon>
+    Add Expense
+  </button>
+</mat-toolbar>
+
+<section class="content">
+  <div *ngIf="loading" class="loading">
+    <mat-progress-spinner mode="indeterminate"></mat-progress-spinner>
+  </div>
+
+  <div *ngIf="error && !loading" class="error">
+    <p>{{ error }}</p>
+    <button mat-stroked-button (click)="goBack()">Back to Trips</button>
+  </div>
+
+  <div *ngIf="trip && !loading" class="trip-details">
+    <!-- Trip Info Card -->
+    <mat-card class="trip-info">
+      <mat-card-header>
+        <div mat-card-avatar class="avatar">{{ trip.name.charAt(0).toUpperCase() }}</div>
+        <mat-card-title>{{ trip.name }}</mat-card-title>
+        <mat-card-subtitle>{{ trip.dates }}</mat-card-subtitle>
+      </mat-card-header>
+
+      <mat-card-content>
+        <div class="info-row">
+          <span class="label">Created:</span>
+          <span class="value">{{ trip.createdAt | date: 'medium' }}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Participants:</span>
+          <span class="value">{{ trip.participants.length }}</span>
+        </div>
+        <div class="info-row" *ngIf="trip.description">
+          <span class="label">Description:</span>
+          <span class="value">{{ trip.description }}</span>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Add Expense Form -->
+    <mat-card class="add-expense" *ngIf="showAddExpense">
+      <mat-card-title>Add New Expense</mat-card-title>
+      <mat-card-content>
+        <form [formGroup]="expenseForm" (ngSubmit)="addExpense()">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Expense Name</mat-label>
+            <input matInput formControlName="name" placeholder="e.g., Dinner, Gas">
+            <mat-error *ngIf="expenseForm.get('name')?.hasError('required')">Name is required</mat-error>
+            <mat-error *ngIf="expenseForm.get('name')?.hasError('minlength')">Minimum 2 characters</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Description (optional)</mat-label>
+            <textarea matInput formControlName="description" rows="2"></textarea>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Amount (PLN)</mat-label>
+            <input matInput formControlName="totalCost" type="number" step="0.01" placeholder="0.00">
+            <mat-error *ngIf="expenseForm.get('totalCost')?.hasError('required')">Amount is required</mat-error>
+            <mat-error *ngIf="expenseForm.get('totalCost')?.hasError('min')">Amount must be greater than 0</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Paid By (User ID)</mat-label>
+            <input matInput formControlName="payerId" type="number" placeholder="Your user ID">
+            <mat-error *ngIf="expenseForm.get('payerId')?.hasError('required')">Payer ID is required</mat-error>
+          </mat-form-field>
+
+          <div class="checkbox-row">
+            <mat-checkbox formControlName="isScanned">Is Scanned Receipt</mat-checkbox>
+            <mat-checkbox formControlName="isEvenDivision">Split Evenly</mat-checkbox>
+          </div>
+
+          <div class="form-actions">
+            <button mat-stroked-button type="button" (click)="toggleAddExpense()">Cancel</button>
+            <button mat-flat-button color="primary" type="submit" [disabled]="expenseForm.invalid">
+              Add Expense
+            </button>
+          </div>
+        </form>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Expenses List -->
+    <div class="expenses-section">
+      <h3>Expenses ({{ expenses.length }})</h3>
+
+      <div *ngIf="expenses.length === 0" class="empty">
+        <mat-icon>receipt_long</mat-icon>
+        <p>No expenses yet. Add your first expense!</p>
+      </div>
+
+      <mat-card *ngFor="let exp of expenses" class="expense-card">
+        <mat-card-header>
+          <div mat-card-avatar class="expense-avatar">{{ exp.name.charAt(0).toUpperCase() }}</div>
+          <mat-card-title>{{ exp.name }}</mat-card-title>
+          <mat-card-subtitle>
+            <span *ngIf="exp.isScanned" class="badge receipt">📸 Scanned</span>
+            <span *ngIf="exp.isEvenDivision" class="badge split">↔️ Split Evenly</span>
+          </mat-card-subtitle>
+        </mat-card-header>
+
+        <mat-card-content>
+          <div class="expense-row">
+            <span class="label">Amount:</span>
+            <span class="value amount">{{ formatCurrency(exp.totalCost) }}</span>
+          </div>
+          <div class="expense-row">
+            <span class="label">Paid by:</span>
+            <span class="value">User #{{ exp.payerId }}</span>
+          </div>
+          <div class="expense-row" *ngIf="exp.description">
+            <span class="label">Note:</span>
+            <span class="value">{{ exp.description }}</span>
+          </div>
+          <div class="expense-row">
+            <span class="label">Date:</span>
+            <span class="value">{{ exp.createdAt | date: 'short' }}</span>
+          </div>
+        </mat-card-content>
+
+        <mat-card-actions align="end">
+          <button mat-icon-button aria-label="delete" (click)="deleteExpense(exp.id)" disabled title="Delete not yet implemented">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </mat-card-actions>
+      </mat-card>
+    </div>
+  </div>
+</section>

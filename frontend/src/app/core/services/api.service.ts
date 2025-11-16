@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { GetTrip, CreateTrip } from '../models/trip.model'
-import { Expense } from '../models/expense.model'
+import { Expense, ExpenseCreate } from '../models/expense.model'
 import { DebtsSummary } from '../models/debts.model';
 
 // dannye parni derzjite krepko ne poteryaite
@@ -76,7 +76,7 @@ export class ApiService {
    * Create expense - send snake_case field names expected by backend
    * Backend schema ExpenseCreate: { is_scanned, name, description, payer_id, is_even_division, total_cost }
    */
-  createExpense(tripId: number, exp: Omit<Expense, 'id'|'createdAt'>): Observable<Expense> {
+  createExpense(tripId: number, exp: ExpenseCreate): Observable<Expense> {
     const payload = {
       is_scanned: exp.isScanned,
       name: exp.name,
