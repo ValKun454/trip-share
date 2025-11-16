@@ -1,4 +1,5 @@
 from pydantic import BaseModel, EmailStr, Field, ConfigDict
+from datetime import datetime
 
 # User schemas
 class UserRegister(BaseModel):
@@ -28,25 +29,29 @@ class TokenData(BaseModel):
     email: str | None = None
 
 class Trip(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, from_attributes=True)
 
-    id: str
+    id: int
     name: str
-    dates: str
-    participants: list[str]
+    description: str | None = None
+    created_at: datetime = Field(alias="createdAt")
+    creator_id: int = Field(alias="creatorId")
+    participants: list[int]
 
 class TripCreate(BaseModel):
     name: str
-    dates: str
-    participants: list[str]
+    description: str
+    participants: list[int]
 
 class TripCreateResponse(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, from_attributes=True)
 
-    trip_id: int = Field(alias="tripId")
+    id: int
     name: str
-    dates: str
-    participants: list[str]
+    description: str | None = None
+    created_at: datetime = Field(alias="createdAt")
+    creator_id: int = Field(alias="creatorId")
+    participants: list[int]
 
 
 class Expense(BaseModel):

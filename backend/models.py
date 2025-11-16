@@ -14,22 +14,40 @@ class User(Base):
     username = Column(String, unique=True, index=True, nullable=True)
     is_verified = Column(Boolean, default=False, nullable=False)
 
-    trips = relationship('Trip', back_populates='creator')
+    trips_user = relationship('Trip', back_populates='creator')
     expenses = relationship('Expense', back_populates='payer')
     positions = relationship('Position', back_populates='participant')
+    trips = relationship("Participant", back_populates="user")
 
 class Trip(Base):
     __tablename__ = 'trips'
 
     id = Column(Integer, primary_key=True, index=True)
-    link = Column(String, unique=True, index=True, nullable=False)
     name = Column(String, nullable=False)
     description = Column(String, unique=True, index=True, nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
     creator_id = Column(Integer, ForeignKey('users.id'))
 
-    creator = relationship('User', back_populates='trips')
+    _participants = relationship("Participant", back_populates="trip")
+    creator = relationship('User', back_populates='trips_user')
     expenses = relationship('Expense', back_populates='trip')
+    
+    # 2. This is the "fake" property Pydantic will read.
+    #    It formats the data just as you want it.
+    @property
+    def participants(self) -> list[int]:
+        # This loops through the list of Participant objects
+        # and returns only the user_id for each one.
+        return [p.user_id for p in self._participants]
+
+class Participant(Base):
+    __tablename__ = 'participants'
+    
+    user_id = Column(Integer, ForeignKey('users.id'), primary_key=True)
+    trip_id = Column(Integer, ForeignKey('trips.id'), primary_key=True)
+
+    user = relationship("User", back_populates="trips")
+    trip = relationship("Trip", back_populates="_participants")
 
 class Expense(Base):
     __tablename__ = 'expenses'

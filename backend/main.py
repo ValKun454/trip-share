@@ -7,7 +7,7 @@ import uvicorn
 from datetime import timedelta
 from schemas import *
 from auth import authenticate_user, create_access_token, get_current_user, get_db, ACCESS_TOKEN_EXPIRE_MINUTES, get_password_hash
-from models import User
+from models import User, Trip as TripModel, Participant
 from email_utils import create_verification_token, verify_verification_token, send_verification_email
 
 
@@ -177,30 +177,119 @@ async def read_users_me(current_user: User = Depends(get_current_user)):
 
 
 
-# GET endpoint - retrieve data  ---- trip 
+# GET endpoint - retrieve data  ---- trip
 
 
-@prefix_router.get("/trips/{trip_id}")
-def get_trip(trip_id: int):
-    return {"id": trip_id, "name": "Sample Trip"}
+@prefix_router.get("/trips/{trip_id}", response_model=Trip)
+def get_trip(
+    trip_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get a specific trip by ID
+    Only returns trip if current user is creator or participant
+    """
+    # Query the trip
+    trip = db.query(TripModel).filter(TripModel.id == trip_id).first()
 
-@prefix_router.get("/trips")
-def get_trips():
-    return [
-    {"id": 1, "name": "Sample Trip 1"},
-    {"id": 2, "name": "Sample Trip 2"},
-    {"id": 3, "name": "Sample Trip 3"},
-    {"id": 4, "name": "Sample Trip 4"},
-    {"id": 5, "name": "Sample Trip 5"}
-    ]
+    if not trip:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Trip not found"
+        )
+
+    # Check if user has access (is creator or participant)
+    is_creator = trip.creator_id == current_user.id
+    is_participant = db.query(Participant).filter(
+        Participant.trip_id == trip_id,
+        Participant.user_id == current_user.id
+    ).first() is not None
+
+    if not is_creator and not is_participant:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You don't have access to this trip"
+        )
+
+    return trip
+
+@prefix_router.get("/trips", response_model=list[Trip])
+def get_trips(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get all trips for the current user
+    Returns trips where user is creator or participant
+    """
+    # Get trips where user is creator
+    creator_trips = db.query(TripModel).filter(
+        TripModel.creator_id == current_user.id
+    ).all()
+
+    # Get trips where user is participant
+    participant_trip_ids = db.query(Participant.trip_id).filter(
+        Participant.user_id == current_user.id
+    ).all()
+    participant_trip_ids = [t[0] for t in participant_trip_ids]
+
+    participant_trips = db.query(TripModel).filter(
+        TripModel.id.in_(participant_trip_ids)
+    ).all() if participant_trip_ids else []
+
+    # Combine and deduplicate (in case user is both creator and participant)
+    all_trips = {trip.id: trip for trip in creator_trips + participant_trips}
+
+    return list(all_trips.values())
+
+@prefix_router.post("/trips", response_model=TripCreateResponse, status_code=status.HTTP_201_CREATED)
+def create_trip(
+    data: TripCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Create a new trip
+    Current user becomes the creator
+    Participants are added from the request
+    """
+    # Create the trip
+    new_trip = TripModel(
+        name=data.name,
+        description=data.description,
+        creator_id=current_user.id
+    )
+
+    db.add(new_trip)
+    db.commit()
+    db.refresh(new_trip)
+
+    # Add participants
+    for participant_id in data.participants:
+        # Verify participant exists
+        participant_user = db.query(User).filter(User.id == participant_id).first()
+        if not participant_user:
+            # Rollback and raise error
+            db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"User with id {participant_id} not found"
+            )
+
+        # Create participant relationship
+        participant = Participant(
+            user_id=participant_id,
+            trip_id=new_trip.id
+        )
+        db.add(participant)
+
+    db.commit()
+    db.refresh(new_trip)
+
+    return new_trip
 
 
-
-
-
-@prefix_router.post("/trips", response_model=TripCreateResponse, status_code=201)
-def create_trip(data: TripCreate):
-    return {"tripId": 123, "name": data.name, 'dates': data.dates, 'participants': data.participants}
 
 @prefix_router.get("/trips/{trip_id}/expenses")
 def get_expenses(trip_id: int):
