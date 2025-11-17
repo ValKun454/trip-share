@@ -1,55 +1,91 @@
 <section class="wrap" *ngIf="!loading; else loader">
-
   <ng-container *ngIf="data.length; else empty">
-    <div class="grid">
-      <mat-card class="trip" *ngFor="let s of data">
-        <mat-card-title class="trip__title">
-          <mat-icon>travel_explore</mat-icon>
-          <span>{{ s.trip.name }}</span>
-        </mat-card-title>
+    <div class="content">
+      <header class="page-header">
+        <h1>Total expenses</h1>
+        <p>Quick overview of what you owe and what others owe you across all trips.</p>
+      </header>
 
-        <div class="trip__totals">
-          <div class="kpi">
-            <div class="kpi__label">You owe</div>
-            <div class="kpi__value negative">{{ s.totalYouOwe | currency:'PLN':'symbol':'1.2-2' }}</div>
-          </div>
-          <div class="kpi">
-            <div class="kpi__label">Owed to you</div>
-            <div class="kpi__value positive">{{ s.totalOwedToYou | currency:'PLN':'symbol':'1.2-2' }}</div>
-          </div>
-        </div>
-
-        <mat-divider></mat-divider>
-
-        <div class="lists">
-          <div class="list">
-            <div class="list__title"><mat-icon>call_made</mat-icon> You owe</div>
-            <div class="row" *ngFor="let kv of s.youOwe | keyvalue">
-              <span class="who">{{ kv.key }}</span>
-              <span class="amount negative">{{ kv.value | currency:'PLN':'symbol':'1.2-2' }}</span>
+      <div class="grid">
+        <mat-card class="trip" *ngFor="let s of data">
+          <mat-card-title class="trip__title">
+            <div class="trip__title-left">
+              <mat-icon>travel_explore</mat-icon>
+              <span class="trip__name">{{ s.trip.name }}</span>
             </div>
-            <div class="muted" *ngIf="(s.youOwe | keyvalue).length === 0">No debts</div>
+            <!-- можно потом вывести даты/кол-во расходов -->
+            <!-- <span class="trip__meta">3 expenses · 2 friends</span> -->
+          </mat-card-title>
+
+          <div class="trip__totals">
+            <div class="kpi">
+              <div class="kpi__label">You owe</div>
+              <div class="kpi__value negative">
+                {{ s.totalYouOwe | currency:'PLN':'symbol':'1.2-2' }}
+              </div>
+            </div>
+            <div class="kpi">
+              <div class="kpi__label">Owed to you</div>
+              <div class="kpi__value positive">
+                {{ s.totalOwedToYou | currency:'PLN':'symbol':'1.2-2' }}
+              </div>
+            </div>
           </div>
 
-          <div class="list">
-            <div class="list__title"><mat-icon>call_received</mat-icon> Owe you</div>
-            <div class="row" *ngFor="let kv of s.owedToYou | keyvalue">
-              <span class="who">{{ kv.key }}</span>
-              <span class="amount positive">{{ kv.value | currency:'PLN':'symbol':'1.2-2' }}</span>
+          <mat-divider></mat-divider>
+
+          <div class="lists">
+            <div class="list">
+              <div class="list__title">
+                <mat-icon>call_made</mat-icon>
+                <span>You owe</span>
+              </div>
+
+              <div class="rows" *ngIf="(s.youOwe | keyvalue).length; else noDebts">
+                <div class="row" *ngFor="let kv of s.youOwe | keyvalue">
+                  <span class="who">{{ kv.key }}</span>
+                  <span class="amount negative">
+                    {{ kv.value | currency:'PLN':'symbol':'1.2-2' }}
+                  </span>
+                </div>
+              </div>
+              <ng-template #noDebts>
+                <div class="muted">No debts</div>
+              </ng-template>
             </div>
-            <div class="muted" *ngIf="(s.owedToYou | keyvalue).length === 0">No one owes you</div>
+
+            <div class="list">
+              <div class="list__title">
+                <mat-icon>call_received</mat-icon>
+                <span>Owe you</span>
+              </div>
+
+              <div class="rows" *ngIf="(s.owedToYou | keyvalue).length; else noOneOwes">
+                <div class="row" *ngFor="let kv of s.owedToYou | keyvalue">
+                  <span class="who">{{ kv.key }}</span>
+                  <span class="amount positive">
+                    {{ kv.value | currency:'PLN':'symbol':'1.2-2' }}
+                  </span>
+                </div>
+              </div>
+              <ng-template #noOneOwes>
+                <div class="muted">No one owes you</div>
+              </ng-template>
+            </div>
           </div>
-        </div>
-      </mat-card>
+        </mat-card>
+      </div>
     </div>
   </ng-container>
-
 </section>
 
 <ng-template #loader>
-  <div class="loader">Loading...</div>
+  <div class="loader">Loading your expenses summary…</div>
 </ng-template>
 
 <ng-template #empty>
-  <div class="empty">No trips yet.</div>
+  <div class="empty">
+    <h2>No trips yet</h2>
+    <p>Create your first trip to start tracking shared expenses.</p>
+  </div>
 </ng-template>

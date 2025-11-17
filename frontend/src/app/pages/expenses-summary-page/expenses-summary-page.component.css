@@ -1,76 +1,197 @@
 .wrap {
   min-height: 100dvh;
-  padding: 24px;
+  padding: 32px 40px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.content {
+  width: 100%;
+  max-width: 1120px;
+}
+
+.page-header {
+  margin-bottom: 20px;
+}
+
+.page-header h1 {
+  margin: 0 0 4px;
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.page-header p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--muted);
 }
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 16px;
-  max-width: 1120px;
-  margin: 0 auto;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: 20px;
 }
 
 .trip {
-  background: var(--surface-high);
+  background: radial-gradient(circle at top left, rgba(59,130,246,0.18), transparent 55%)
+              , var(--surface-high);
   color: var(--text);
-  border: 1px solid var(--outline);
-  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 18px;
+  padding: 14px 16px 16px;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.45);
 }
 
 .trip__title {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  gap: 10px;
+}
+
+.trip__title-left {
+  display: flex;
+  align-items: center;
   gap: 8px;
+}
+
+.trip__name {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.trip__title mat-icon {
+  font-size: 20px;
+  height: 20px;
+  width: 20px;
 }
 
 .trip__totals {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  padding: 8px 0 4px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  padding: 8px 0 10px;
 }
 
-.kpi { 
-  padding: 8px 10px;
-  border-radius: 10px;
-  background: rgba(255,255,255,0.02);
-  border: 1px solid var(--outline);
+.kpi {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(148, 163, 184, 0.35);
 }
+
 .kpi__label {
-  font-size: .75rem; color: var(--muted); margin-bottom: 2px;
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-bottom: 4px;
 }
+
 .kpi__value {
   font-weight: 700;
+  font-size: 1.2rem;
+  letter-spacing: 0.03em;
 }
-.kpi__value.negative { color: #ef4444; } /* red-500 */
-.kpi__value.positive { color: #22c55e; } /* green-500 */
+
+.kpi__value.negative {
+  color: #ef4444; /* red-500 */
+}
+
+.kpi__value.positive {
+  color: #22c55e; /* green-500 */
+}
+
+/* "You owe" / "Owe you" */
 
 .lists {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  padding-top: 8px;
+  gap: 14px;
+  padding-top: 10px;
+}
+
+.list {
+  background: rgba(15, 23, 42, 0.5);
+  border-radius: 12px;
+  padding: 8px 9px 9px;
+  border: 1px solid rgba(30, 64, 175, 0.4);
 }
 
 .list__title {
-  display: flex; align-items: center; gap: 6px;
-  font-weight: 600; color: var(--muted); margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 6px;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.list__title mat-icon {
+  font-size: 18px;
+  height: 18px;
+  width: 18px;
+}
+
+.rows {
+  max-height: 180px;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .row {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 8px 10px;
-  border: 1px solid var(--outline);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 8px;
   border-radius: 10px;
-  background: rgba(255,255,255,0.02);
-  margin-bottom: 8px;
+  background: rgba(15, 23, 42, 0.85);
+  margin-bottom: 6px;
+  border: 1px solid rgba(30, 64, 175, 0.55);
 }
 
-.who { color: var(--text); }
-.amount { font-weight: 600; }
-.amount.negative { color: #ef4444; }
-.amount.positive { color: #22c55e; }
+.who {
+  color: var(--text);
+  font-size: 0.9rem;
+}
 
-.muted { color: var(--muted); font-size: .85rem; }
-.loader, .empty { color: var(--muted); text-align: center; padding: 24px; }
+.amount {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.amount.negative {
+  color: #ef4444;
+}
+
+.amount.positive {
+  color: #22c55e;
+}
+
+.muted {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.loader,
+.empty {
+  color: var(--muted);
+  text-align: center;
+  padding: 40px 16px;
+}
+
+.empty h2 {
+  margin: 0 0 4px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.empty p {
+  margin: 0;
+  font-size: 0.9rem;
+}
