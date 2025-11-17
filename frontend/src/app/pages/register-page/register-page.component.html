@@ -10,38 +10,60 @@
 
     <mat-card-content>
       <form [formGroup]="form" (ngSubmit)="submit()">
+        <!-- EMAIL -->
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Email</mat-label>
           <input matInput formControlName="email">
           <mat-icon matSuffix>mail</mat-icon>
-        </mat-form-field>
-        <div class="field-error" *ngIf="form.get('email')?.touched && form.get('email')?.invalid">
-          <small *ngIf="form.get('email')?.errors?.['required']">Email is required.</small>
-          <small *ngIf="form.get('email')?.errors?.['email']">Enter a valid email.</small>
-        </div>
 
+          <!-- Błędy email -->
+          <mat-error *ngIf="form.get('email')?.hasError('required')">
+            Email is required.
+          </mat-error>
+          <mat-error *ngIf="form.get('email')?.hasError('email') && !form.get('email')?.hasError('required')">
+            Enter a valid email.
+          </mat-error>
+        </mat-form-field>
+
+        <!-- USERNAME -->
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Username</mat-label>
           <input matInput formControlName="username">
           <mat-icon matSuffix>person</mat-icon>
-        </mat-form-field>
-        <div class="field-error" *ngIf="form.get('username')?.touched && form.get('username')?.invalid">
-          <small *ngIf="form.get('username')?.errors?.['required']">Username is required.</small>
-          <small *ngIf="form.get('username')?.errors?.['minlength']">Min 3 characters.</small>
-          <small *ngIf="form.get('username')?.errors?.['maxlength']">Max 50 characters.</small>
-        </div>
 
+          <!-- Błędy username -->
+          <mat-error *ngIf="form.get('username')?.hasError('required')">
+            Username is required.
+          </mat-error>
+          <mat-error *ngIf="form.get('username')?.hasError('minlength')">
+            Min 3 characters.
+          </mat-error>
+          <mat-error *ngIf="form.get('username')?.hasError('maxlength')">
+            Max 50 characters.
+          </mat-error>
+        </mat-form-field>
+
+        <!-- PASSWORD -->
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Password</mat-label>
           <input matInput type="password" formControlName="password">
           <mat-icon matSuffix>lock</mat-icon>
-        </mat-form-field>
-        <div class="field-error" *ngIf="form.get('password')?.touched && form.get('password')?.invalid">
-          <small *ngIf="form.get('password')?.errors?.['required']">Password is required.</small>
-          <small *ngIf="form.get('password')?.errors?.['minlength']">Min 8 characters.</small>
-        </div>
 
-        <button mat-raised-button color="primary" class="register-btn" type="submit" [disabled]="form.invalid || isLoading">
+          <!-- Błędy hasła -->
+          <mat-error *ngIf="form.get('password')?.hasError('required')">
+            Password is required.
+          </mat-error>
+          <mat-error *ngIf="form.get('password')?.hasError('minlength') && !form.get('password')?.hasError('required')">
+            Min 8 characters.
+          </mat-error>
+        </mat-form-field>
+
+        <button
+          mat-raised-button
+          color="primary"
+          class="register-btn"
+          type="submit"
+          [disabled]="form.invalid || isLoading">
           <mat-icon>how_to_reg</mat-icon>
           <span *ngIf="!isLoading">Create account</span>
           <span *ngIf="isLoading">Creating…</span>
