@@ -10,26 +10,32 @@ import { MatToolbarModule } from "@angular/material/toolbar";
 import { MatFormFieldModule } from "@angular/material/form-field";
 import { MatDatepickerModule } from "@angular/material/datepicker";
 import { MatNativeDateModule } from "@angular/material/core";
-import { MAT_DATE_FORMATS, MAT_DATE_LOCALE } from "@angular/material/core";
+import { MAT_DATE_FORMATS, MAT_DATE_LOCALE, DateAdapter } from "@angular/material/core";
 import { RouterModule } from "@angular/router";
 import { ApiService } from "../../core/services/api.service";
 import { GetTrip, CreateTrip } from "../../core/models/trip.model";
 
+/**
+ * Formatki daty dla polskiego formatu dd.MM.yyyy
+ */
 const PL_DATE_FORMATS = {
-  parse: { dateInput: 'DD.MM.YYYY' },
+  parse: { dateInput: 'dd.MM.yyyy' },
   display: {
-    dateInput: 'DD.MM.YYYY',
-    monthYearLabel: 'MMM YYYY',
-    dateA11yLabel: 'DD.MM.YYYY',
-    monthYearA11yLabel: 'MMMM YYYY'
+    dateInput: 'dd.MM.yyyy',
+    monthYearLabel: 'MMM yyyy',
+    dateA11yLabel: 'dd.MM.yyyy',
+    monthYearA11yLabel: 'MMMM yyyy'
   }
 };
 
+/**
+ * Walidator zakresu dat – start <= end
+ */
 function startBeforeEnd(): ValidatorFn {
   return (group: AbstractControl) => {
     const start = group.get('startDate')?.value as Date | null;
     const end = group.get('endDate')?.value as Date | null;
-    // Only validate if both dates are present
+    // walidujemy tylko jeżeli obie daty są ustawione
     if (!start || !end) return null;
     return start.getTime() <= end.getTime() ? null : { rangeInvalid: true };
   };
@@ -63,7 +69,7 @@ function startBeforeEnd(): ValidatorFn {
   styleUrls: ["./trips-page.component.css"]
 })
 export class TripsPageComponent implements OnInit {
-  // Display model: extends GetTrip with formatted dates string for UI
+  // Model wyświetlania: Trip + sformatowane daty (start–end)
   trips: Array<GetTrip & { dates: string }> = [];
   loading = false;
   error: string | null = null;
@@ -79,13 +85,35 @@ export class TripsPageComponent implements OnInit {
   }, { validators: startBeforeEnd() });
 
   private api = inject(ApiService);
+  // Adapter daty Angular Material – ustawimy mu locale na PL
+  private dateAdapter = inject<DateAdapter<Date>>(DateAdapter as any);
 
   ngOnInit(): void {
+    // Ustawiamy lokalizację na pl-PL, żeby input pokazywał dd.MM.yyyy,
+    // a nie amerykański format MM/DD/YYYY.
+    this.dateAdapter.setLocale('pl-PL');
+
     this.loadTrips();
   }
 
-  /** Format ISO date string to DD.MM.YYYY format for display */
-  private formatDates(isoDateString: string): string {
+
+  /**
+   * Formatuje obiekt Date / string do "dd.MM.yyyy"
+   */
+  private toDDMMYYYY(d: unknown): string {
+    if (!d) return '';
+    const date = d instanceof Date ? d : new Date(d as any);
+    if (isNaN(date.getTime())) return String(d).trim();
+    const dd = String(date.getDate()).padStart(2, '0');
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const yyyy = date.getFullYear();
+    return `${dd}.${mm}.${yyyy}`;
+  }
+
+  /**
+   * Fallback – formatowanie createdAt do "dd.MM.yyyy"
+   */
+  private formatDateFromIso(isoDateString: string): string {
     try {
       const date = new Date(isoDateString);
       if (isNaN(date.getTime())) return '—';
@@ -98,15 +126,40 @@ export class TripsPageComponent implements OnInit {
     }
   }
 
+  /**
+   * Buduje etykietę dat na karcie tripa.
+   * Priorytet:
+   *  1) daty wyciągnięte z description (wzór dd.MM.yyyy),
+   *  2) w razie braku – data utworzenia (createdAt).
+   */
+  private buildDatesLabel(trip: GetTrip): string {
+    const desc = trip.description || '';
+    const regex = /(\d{2}\.\d{2}\.\d{4})/g;
+    const matches = desc.match(regex);
+
+    if (matches && matches.length > 0) {
+      const unique = Array.from(new Set(matches));
+      if (unique.length === 1) {
+        return unique[0]; // tylko jedna data
+      }
+      if (unique.length >= 2) {
+        return `${unique[0]} – ${unique[1]}`; // zakres dat
+      }
+    }
+
+    // jeżeli w opisie nie ma dat – pokaż datę utworzenia
+    return this.formatDateFromIso(trip.createdAt);
+  }
+
   loadTrips() {
     this.loading = true;
     this.error = null;
     this.api.getTrips().subscribe({
       next: (list) => {
-        // Backend returns trips with id, name, createdAt, creatorId, participants, description
+        // Backend zwraca: id, name, createdAt, creatorId, participants, description
         this.trips = list.map(t => ({
           ...t,
-          dates: this.formatDates(t.createdAt) // Add formatted dates for display
+          dates: this.buildDatesLabel(t)
         }));
         this.trips.forEach(t => this.loadSummary(String(t.id)));
         this.loading = false;
@@ -124,18 +177,8 @@ export class TripsPageComponent implements OnInit {
     if (!this.showCreate) this.form.reset();
   }
 
-  private toDDMMYYYY(d: unknown): string {
-    if (!d) return '';
-    const date = d instanceof Date ? d : new Date(d as any);
-    if (isNaN(date.getTime())) return String(d).trim();
-    const dd = String(date.getDate()).padStart(2, '0');
-    const mm = String(date.getMonth() + 1).padStart(2, '0');
-    const yy = date.getFullYear();
-    return `${dd}.${mm}.${yy}`;
-  }
-
   createTrip() {
-    // Only require name field to be valid; dates and participants are optional
+    // Wymagamy tylko nazwy; daty i uczestnicy są opcjonalni
     const nameControl = this.form.get('name');
     if (!nameControl || !nameControl.valid) {
       this.form.markAllAsTouched();
@@ -147,18 +190,36 @@ export class TripsPageComponent implements OnInit {
     const name = (val.name ?? '').toString().trim();
     const participantsRaw = (val.participants ?? '').toString().trim();
 
-    // Parse participants as comma-separated user IDs (convert to numbers)
+    // Parsujemy uczestników jako ID użytkowników oddzielone przecinkiem
     const participants: number[] = participantsRaw
-      ? participantsRaw.split(',').map((s: string) => {
-        const num = parseInt(s.trim(), 10);
-        return isNaN(num) ? 0 : num;
-      }).filter((num: number) => num > 0)
+      ? participantsRaw
+          .split(',')
+          .map((s: string) => {
+            const num = parseInt(s.trim(), 10);
+            return isNaN(num) ? 0 : num;
+          })
+          .filter((num: number) => num > 0)
       : [];
 
-    // Create trip DTO - backend expects { name, description, participants }
+    // daty z formularza -> stringi "dd.MM.yyyy"
+    const startLabel = this.toDDMMYYYY(val.startDate);
+    const endLabel = this.toDDMMYYYY(val.endDate);
+
+    // opis zapisujemy tak, żeby dało się go później łatwo sparsować
+    let description = '';
+    if (startLabel && endLabel) {
+      description = `Trip: ${startLabel} – ${endLabel}`;
+    } else if (startLabel) {
+      description = `Trip: ${startLabel}`;
+    } else if (endLabel) {
+      description = `Trip: do ${endLabel}`;
+    } else {
+      description = '';
+    }
+
     const dto: CreateTrip = {
       name,
-      description: `Trip from ${new Date().toLocaleDateString()}`, // Auto-generate simple description
+      description,
       participants
     };
 
@@ -167,7 +228,6 @@ export class TripsPageComponent implements OnInit {
     this.api.createTrip(dto).subscribe({
       next: (response: any) => {
         console.log('Trip created successfully:', response);
-        // Backend returns full Trip object with id field
         const tripId = response?.id;
         if (tripId) {
           this.toggleCreate();

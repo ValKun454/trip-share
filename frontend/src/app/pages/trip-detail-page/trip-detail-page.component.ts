@@ -43,6 +43,7 @@ export class TripDetailPageComponent implements OnInit {
   private fb = inject(FormBuilder);
   private auth = inject(AuthService);
 
+  // Trip + gotowa etykieta dat
   trip: (GetTrip & { dates: string }) | null = null;
   expenses: Expense[] = [];
   loading = true;
@@ -70,7 +71,10 @@ export class TripDetailPageComponent implements OnInit {
     }
   }
 
-  private formatDates(isoDateString: string): string {
+  /**
+   * Fallback – formatowanie createdAt do "dd.MM.yyyy"
+   */
+  private formatDateFromIso(isoDateString: string): string {
     try {
       const date = new Date(isoDateString);
       if (isNaN(date.getTime())) return '—';
@@ -83,6 +87,29 @@ export class TripDetailPageComponent implements OnInit {
     }
   }
 
+  /**
+   * Wyciąga etykietę dat z opisu tripa.
+   * Szuka dat w formacie dd.MM.yyyy w polu description.
+   * Jeżeli nic nie znajdzie – używa daty utworzenia.
+   */
+  private buildDatesLabel(trip: GetTrip): string {
+    const desc = trip.description || '';
+    const regex = /(\d{2}\.\d{2}\.\d{4})/g;
+    const matches = desc.match(regex);
+
+    if (matches && matches.length > 0) {
+      const unique = Array.from(new Set(matches));
+      if (unique.length === 1) {
+        return unique[0];
+      }
+      if (unique.length >= 2) {
+        return `${unique[0]} – ${unique[1]}`;
+      }
+    }
+
+    return this.formatDateFromIso(trip.createdAt);
+  }
+
   loadTripDetails(tripId: string) {
     this.loading = true;
     this.error = null;
@@ -91,7 +118,7 @@ export class TripDetailPageComponent implements OnInit {
       next: (trip) => {
         this.trip = {
           ...trip,
-          dates: this.formatDates(trip.createdAt)
+          dates: this.buildDatesLabel(trip)
         };
         this.loadExpenses(tripId);
       },
@@ -120,7 +147,7 @@ export class TripDetailPageComponent implements OnInit {
   toggleAddExpense() {
     this.showAddExpense = !this.showAddExpense;
     if (!this.showAddExpense) {
-      this.expenseForm.reset({ 
+      this.expenseForm.reset({
         payerId: this.currentUser?.id,
         isScanned: false,
         isEvenDivision: true
@@ -165,7 +192,7 @@ export class TripDetailPageComponent implements OnInit {
 
     if (!this.trip) return;
 
-    // Backend doesn't have delete endpoint, so we show a message
+    // Backend nie ma endpointu delete – tylko komunikat
     alert('Delete functionality not yet implemented on backend');
   }
 
