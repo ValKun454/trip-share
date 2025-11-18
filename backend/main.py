@@ -8,7 +8,7 @@ import uvicorn
 from datetime import timedelta
 from schemas import *
 from auth import authenticate_user, create_access_token, get_current_user, get_db, ACCESS_TOKEN_EXPIRE_MINUTES, get_password_hash
-from models import User, Trip as TripModel, Participant, Expense as ExpenseModel, Position as PositionModel
+from models import User, Trip as TripModel, Participant, Expense as ExpenseModel, Position as PositionModel, Friend
 from email_utils import create_verification_token, verify_verification_token, send_verification_email
 
 
@@ -237,6 +237,116 @@ async def delete_user(
 
     return None
 
+# Friend endpoints
+@prefix_router.get("/friends", response_model=list[FriendResponse])
+async def get_friends(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get all friends for the current user
+    Returns friendship records where current user is either user_id_1 or user_id_2
+    """
+    # Get all friendships involving the current user
+    friends = db.query(Friend).filter(
+        (Friend.user_id_1 == current_user.id) | (Friend.user_id_2 == current_user.id)
+    ).all()
+
+    return friends
+
+@prefix_router.post("/friends", response_model=FriendResponse, status_code=status.HTTP_201_CREATED)
+async def add_friend(
+    data: FriendCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Add a friend for the current user
+    Creates a friendship between current user and the specified friend_id
+    Ensures user_id_1 is always less than user_id_2 (database constraint)
+    """
+    # Verify friend exists
+    friend_user = db.query(User).filter(User.id == data.friend_id).first()
+    if not friend_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"User with id {data.friend_id} not found"
+        )
+
+    # Prevent users from adding themselves as friends
+    if current_user.id == data.friend_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot add yourself as a friend"
+        )
+
+    # Ensure user_id_1 < user_id_2 to satisfy database constraint
+    user_id_1 = min(current_user.id, data.friend_id)
+    user_id_2 = max(current_user.id, data.friend_id)
+
+    # Check if friendship already exists
+    existing_friendship = db.query(Friend).filter(
+        Friend.user_id_1 == user_id_1,
+        Friend.user_id_2 == user_id_2
+    ).first()
+
+    if existing_friendship:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Friendship already exists"
+        )
+
+    # Create the friendship
+    new_friendship = Friend(
+        user_id_1=user_id_1,
+        user_id_2=user_id_2
+    )
+
+    db.add(new_friendship)
+    db.commit()
+    db.refresh(new_friendship)
+
+    return new_friendship
+
+@prefix_router.delete("/friends/{friend_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def remove_friend(
+    friend_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Remove a friend for the current user
+    Deletes the friendship between current user and the specified friend_id
+    """
+    # Verify friend exists
+    friend_user = db.query(User).filter(User.id == friend_id).first()
+    if not friend_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"User with id {friend_id} not found"
+        )
+
+    # Determine the correct order for querying
+    user_id_1 = min(current_user.id, friend_id)
+    user_id_2 = max(current_user.id, friend_id)
+
+    # Find the friendship
+    friendship = db.query(Friend).filter(
+        Friend.user_id_1 == user_id_1,
+        Friend.user_id_2 == user_id_2
+    ).first()
+
+    if not friendship:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Friendship not found"
+        )
+
+    # Delete the friendship
+    db.delete(friendship)
+    db.commit()
+
+    return None
 
 
 # GET endpoint - retrieve data  ---- trip

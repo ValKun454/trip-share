@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, Boolean, DateTime, Date, ForeignKey, Numeric
+from sqlalchemy import Column, String, Integer, Boolean, DateTime, Date, ForeignKey, Numeric, UniqueConstraint, CheckConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 import datetime
@@ -80,3 +80,16 @@ class Position(Base):
 
     expense = relationship('Expense', back_populates='_positions')
     participant = relationship('User', back_populates='positions')
+
+class Friend(Base):
+    __tablename__ = 'friends'
+    
+    id = Column(Integer, primary_key=True)
+    user_id_1 = Column(Integer, ForeignKey('users.id'), nullable=False)
+    user_id_2 = Column(Integer, ForeignKey('users.id'), nullable=False)
+    
+    __table_args__ = (
+        UniqueConstraint('user_id_1', 'user_id_2', name='unique_friendship'),
+        # Ensure user_id_1 is always less than user_id_2
+        CheckConstraint('user_id_1 < user_id_2', name='check_user_order'),
+    )

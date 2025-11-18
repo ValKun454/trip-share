@@ -130,3 +130,13 @@ class PositionCreate(BaseModel):
 
 class PositionUpdate(BaseModel):
     participant_id: int = Field(alias="participantId")
+
+class FriendResponse(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, from_attributes=True)
+
+    id: int
+    user_id_1: int = Field(alias="userId1")
+    user_id_2: int = Field(alias="userId2")
+
+class FriendCreate(BaseModel):
+    friend_id: int = Field(alias="friendId")
