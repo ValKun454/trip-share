@@ -20,6 +20,11 @@ class UserResponse(BaseModel):
     username: str | None = Field(default=None, max_length=40)
     is_verified: bool = Field(alias="isVerified")
 
+class UserUpdate(BaseModel):
+    email: EmailStr | None = None
+    username: str | None = Field(default=None, min_length=3, max_length=40)
+    password: str | None = Field(default=None, min_length=8)
+
 class Token(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 

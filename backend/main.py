@@ -175,6 +175,67 @@ async def read_users_me(current_user: User = Depends(get_current_user)):
     """
     return current_user
 
+@prefix_router.put("/me", response_model=UserResponse)
+async def update_user(
+    data: UserUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Update current user's information
+    Can update email, username, and password
+    Email and username must remain unique
+    """
+    # Update email if provided
+    if data.email is not None and data.email != current_user.email:
+        # Check if new email already exists
+        existing_user = db.query(User).filter(User.email == data.email).first()
+        if existing_user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email already registered"
+            )
+        current_user.email = data.email
+        # Reset verification status when email changes
+        current_user.is_verified = False
+
+    # Update username if provided
+    if data.username is not None and data.username != current_user.username:
+        # Check if new username already exists
+        existing_username = db.query(User).filter(User.username == data.username).first()
+        if existing_username:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Username already taken"
+            )
+        current_user.username = data.username
+
+    # Update password if provided
+    if data.password is not None:
+        hashed_password = get_password_hash(data.password)
+        current_user.hashed_password = hashed_password
+
+    db.commit()
+    db.refresh(current_user)
+
+    return current_user
+
+@prefix_router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_user(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Delete current user's account
+    Deletes all associated trips, participants, expenses, and positions
+    This action is permanent and cannot be undone
+    """
+    # Delete the user (cascade will handle related data)
+    db.delete(current_user)
+    db.commit()
+
+    return None
+
 
 
 # GET endpoint - retrieve data  ---- trip
