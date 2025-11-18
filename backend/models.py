@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, Boolean, DateTime, ForeignKey, Numeric
+from sqlalchemy import Column, String, Integer, Boolean, DateTime, Date, ForeignKey, Numeric
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 import datetime
@@ -25,6 +25,8 @@ class Trip(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(100), nullable=False)
     description = Column(String(500), index=True, nullable=True)
+    beginning_date = Column(Date, index=True, nullable=True)
+    end_date = Column(Date, index=True, nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
     creator_id = Column(Integer, ForeignKey('users.id'))
 
