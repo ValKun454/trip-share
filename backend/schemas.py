@@ -5,7 +5,7 @@ from decimal import Decimal
 # User schemas
 class UserRegister(BaseModel):
     email: EmailStr
-    username: str = Field(..., min_length=3, max_length=50)
+    username: str = Field(..., min_length=3, max_length=40)
     password: str = Field(..., min_length=8)
 
 class UserLogin(BaseModel):
@@ -17,7 +17,7 @@ class UserResponse(BaseModel):
 
     id: int
     email: str
-    username: str | None = None
+    username: str | None = None = Field(max_length=40)
     is_verified: bool = Field(alias="isVerified")
 
 class Token(BaseModel):
@@ -33,23 +33,23 @@ class Trip(BaseModel):
     model_config = ConfigDict(populate_by_name=True, from_attributes=True)
 
     id: int
-    name: str
-    description: str | None = None
+    name: str = Field(max_length=100)
+    description: str | None = None = Field(max_length=500)
     created_at: datetime = Field(alias="createdAt")
     creator_id: int = Field(alias="creatorId")
     participants: list[int]
 
 class TripCreate(BaseModel):
-    name: str
-    description: str
+    name: str = Field(max_length=100)
+    description: str = Field(max_length=500)
     participants: list[int]
 
 class TripCreateResponse(BaseModel):
     model_config = ConfigDict(populate_by_name=True, from_attributes=True)
 
     id: int
-    name: str
-    description: str | None = None
+    name: str = Field(max_length=100)
+    description: str | None = None = Field(max_length=500)
     created_at: datetime = Field(alias="createdAt")
     creator_id: int = Field(alias="creatorId")
     participants: list[int]
@@ -60,8 +60,8 @@ class Expense(BaseModel):
 
     id: int
     is_scanned: bool = Field(alias="isScanned")
-    name: str
-    description: str
+    name: str = Field(max_length=100)
+    description: str = Field(max_length=500)
     created_at: datetime = Field(alias="createdAt")
     trip_id: int = Field(alias="tripId")
     payer_id: int = Field(alias="payerId")
@@ -71,8 +71,8 @@ class Expense(BaseModel):
 
 class ExpenseCreate(BaseModel):
     is_scanned: bool = Field(alias="isScanned")
-    name: str
-    description: str
+    name: str = Field(max_length=100)
+    description: str = Field(max_length=500)
     payer_id: int = Field(alias="payerId")
     is_even_division: bool = Field(alias="isEvenDivision")
     total_cost: Decimal
@@ -82,8 +82,8 @@ class ExpenseCreateResponse(BaseModel):
 
     id: int
     is_scanned: bool = Field(alias="isScanned")
-    name: str
-    description: str
+    name: str = Field(max_length=100)
+    description: str = Field(max_length=500)
     created_at: datetime = Field(alias="createdAt")
     trip_id: int = Field(alias="tripId")
     payer_id: int = Field(alias="payerId")
