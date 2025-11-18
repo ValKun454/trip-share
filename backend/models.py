@@ -11,7 +11,7 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
-    username = Column(String, unique=True, index=True, nullable=True)
+    username = Column(String(40), unique=True, index=True, nullable=True)
     is_verified = Column(Boolean, default=False, nullable=False)
 
     trips_user = relationship('Trip', back_populates='creator')
@@ -23,8 +23,8 @@ class Trip(Base):
     __tablename__ = 'trips'
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, nullable=False)
-    description = Column(String, index=True, nullable=True)
+    name = Column(String(100), nullable=False)
+    description = Column(String(500), index=True, nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
     creator_id = Column(Integer, ForeignKey('users.id'))
 
@@ -54,8 +54,8 @@ class Expense(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     is_scanned = Column(Boolean, default=True, nullable=False)
-    name = Column(String, nullable=False)
-    description = Column(String, index=True, nullable=True)
+    name = Column(String(100), nullable=False)
+    description = Column(String(500), index=True, nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
     trip_id = Column(Integer, ForeignKey('trips.id'))
     payer_id = Column(Integer, ForeignKey('users.id'))
