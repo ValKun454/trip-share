@@ -3,11 +3,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
+from typing import List
 import uvicorn
 from datetime import timedelta
 from schemas import *
 from auth import authenticate_user, create_access_token, get_current_user, get_db, ACCESS_TOKEN_EXPIRE_MINUTES, get_password_hash
-from models import User, Trip as TripModel, Participant, Expense as ExpenseModel, Position
+from models import User, Trip as TripModel, Participant, Expense as ExpenseModel, Position as PositionModel
 from email_utils import create_verification_token, verify_verification_token, send_verification_email
 
 
@@ -702,6 +703,385 @@ def delete_expense(
 
     # Delete the expense
     db.delete(expense)
+    db.commit()
+
+    return None
+
+@prefix_router.get("/trips/{trip_id}/expenses/{expense_id}/positions", response_model=List[Position])
+def get_positions(
+    trip_id: int,
+    expense_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get all positions for a specific expense
+    Only allowed if current user has access to the trip
+    """
+    # Verify the trip exists and user has access
+    trip = db.query(TripModel).filter(TripModel.id == trip_id).first()
+
+    if not trip:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Trip not found"
+        )
+
+    # Check if user has access to this trip
+    is_creator = trip.creator_id == current_user.id
+    is_participant = db.query(Participant).filter(
+        Participant.trip_id == trip_id,
+        Participant.user_id == current_user.id
+    ).first() is not None
+
+    if not is_creator and not is_participant:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You don't have access to this trip"
+        )
+
+    # Verify expense exists and belongs to this trip
+    expense = db.query(ExpenseModel).filter(
+        ExpenseModel.id == expense_id,
+        ExpenseModel.trip_id == trip_id
+    ).first()
+
+    if not expense:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Expense not found"
+        )
+
+    # Get all positions for this expense
+    positions = db.query(PositionModel).filter(
+        PositionModel.expense_id == expense_id
+    ).all()
+
+    return positions
+
+@prefix_router.get("/trips/{trip_id}/expenses/{expense_id}/positions/{participant_id}", response_model=Position)
+def get_position(
+    trip_id: int,
+    expense_id: int,
+    participant_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get a specific position by expense_id and participant_id
+    Only allowed if current user has access to the trip
+    """
+    # Verify the trip exists and user has access
+    trip = db.query(TripModel).filter(TripModel.id == trip_id).first()
+
+    if not trip:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Trip not found"
+        )
+
+    # Check if user has access to this trip
+    is_creator = trip.creator_id == current_user.id
+    is_participant = db.query(Participant).filter(
+        Participant.trip_id == trip_id,
+        Participant.user_id == current_user.id
+    ).first() is not None
+
+    if not is_creator and not is_participant:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You don't have access to this trip"
+        )
+
+    # Verify expense exists and belongs to this trip
+    expense = db.query(ExpenseModel).filter(
+        ExpenseModel.id == expense_id,
+        ExpenseModel.trip_id == trip_id
+    ).first()
+
+    if not expense:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Expense not found"
+        )
+
+    # Get the position
+    position = db.query(PositionModel).filter(
+        PositionModel.expense_id == expense_id,
+        PositionModel.participant_id == participant_id
+    ).first()
+
+    if not position:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Position not found"
+        )
+
+    return position
+
+@prefix_router.post("/trips/{trip_id}/expenses/{expense_id}/positions", response_model=Position, status_code=status.HTTP_201_CREATED)
+def create_position(
+    trip_id: int,
+    expense_id: int,
+    data: PositionCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Create a new position for an expense
+    Only allowed if current user has access to the trip
+    Participant must be part of the trip
+    """
+    # Verify the trip exists and user has access
+    trip = db.query(TripModel).filter(TripModel.id == trip_id).first()
+
+    if not trip:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Trip not found"
+        )
+
+    # Check if user has access to this trip
+    is_creator = trip.creator_id == current_user.id
+    is_participant = db.query(Participant).filter(
+        Participant.trip_id == trip_id,
+        Participant.user_id == current_user.id
+    ).first() is not None
+
+    if not is_creator and not is_participant:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You don't have access to this trip"
+        )
+
+    # Verify expense exists and belongs to this trip
+    expense = db.query(ExpenseModel).filter(
+        ExpenseModel.id == expense_id,
+        ExpenseModel.trip_id == trip_id
+    ).first()
+
+    if not expense:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Expense not found"
+        )
+
+    # Verify participant exists
+    participant_user = db.query(User).filter(User.id == data.participant_id).first()
+    if not participant_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"User with id {data.participant_id} not found"
+        )
+
+    # Check if participant is creator or participant of the trip
+    participant_is_creator = trip.creator_id == data.participant_id
+    participant_is_participant = db.query(Participant).filter(
+        Participant.trip_id == trip_id,
+        Participant.user_id == data.participant_id
+    ).first() is not None
+
+    if not participant_is_creator and not participant_is_participant:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Participant must be part of the trip"
+        )
+
+    # Check if position already exists
+    existing_position = db.query(PositionModel).filter(
+        PositionModel.expense_id == expense_id,
+        PositionModel.participant_id == data.participant_id
+    ).first()
+
+    if existing_position:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Position already exists for this participant"
+        )
+
+    # Create the position
+    new_position = PositionModel(
+        expense_id=expense_id,
+        participant_id=data.participant_id
+    )
+
+    db.add(new_position)
+    db.commit()
+    db.refresh(new_position)
+
+    return new_position
+
+@prefix_router.put("/trips/{trip_id}/expenses/{expense_id}/positions/{participant_id}", response_model=Position)
+def update_position(
+    trip_id: int,
+    expense_id: int,
+    participant_id: int,
+    data: PositionUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Update a position (change the participant)
+    Only allowed if current user has access to the trip
+    New participant must be part of the trip
+    """
+    # Verify the trip exists and user has access
+    trip = db.query(TripModel).filter(TripModel.id == trip_id).first()
+
+    if not trip:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Trip not found"
+        )
+
+    # Check if user has access to this trip
+    is_creator = trip.creator_id == current_user.id
+    is_participant = db.query(Participant).filter(
+        Participant.trip_id == trip_id,
+        Participant.user_id == current_user.id
+    ).first() is not None
+
+    if not is_creator and not is_participant:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You don't have access to this trip"
+        )
+
+    # Verify expense exists and belongs to this trip
+    expense = db.query(ExpenseModel).filter(
+        ExpenseModel.id == expense_id,
+        ExpenseModel.trip_id == trip_id
+    ).first()
+
+    if not expense:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Expense not found"
+        )
+
+    # Get the position to update
+    position = db.query(PositionModel).filter(
+        PositionModel.expense_id == expense_id,
+        PositionModel.participant_id == participant_id
+    ).first()
+
+    if not position:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Position not found"
+        )
+
+    # Verify new participant exists
+    new_participant_user = db.query(User).filter(User.id == data.participant_id).first()
+    if not new_participant_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"User with id {data.participant_id} not found"
+        )
+
+    # Check if new participant is creator or participant of the trip
+    new_participant_is_creator = trip.creator_id == data.participant_id
+    new_participant_is_participant = db.query(Participant).filter(
+        Participant.trip_id == trip_id,
+        Participant.user_id == data.participant_id
+    ).first() is not None
+
+    if not new_participant_is_creator and not new_participant_is_participant:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="New participant must be part of the trip"
+        )
+
+    # Check if position already exists for the new participant
+    if data.participant_id != participant_id:
+        existing_position = db.query(Position).filter(
+            Position.expense_id == expense_id,
+            Position.participant_id == data.participant_id
+        ).first()
+
+        if existing_position:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Position already exists for this participant"
+            )
+
+        # Delete old position and create new one (since participant_id is part of primary key)
+        db.delete(position)
+        db.flush()
+
+        new_position = PositionModel(
+            expense_id=expense_id,
+            participant_id=data.participant_id
+        )
+        db.add(new_position)
+        db.commit()
+        db.refresh(new_position)
+
+        return new_position
+    else:
+        # No change needed
+        return position
+
+@prefix_router.delete("/trips/{trip_id}/expenses/{expense_id}/positions/{participant_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_position(
+    trip_id: int,
+    expense_id: int,
+    participant_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Delete a position
+    Only allowed if current user has access to the trip
+    """
+    # Verify the trip exists and user has access
+    trip = db.query(TripModel).filter(TripModel.id == trip_id).first()
+
+    if not trip:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Trip not found"
+        )
+
+    # Check if user has access to this trip
+    is_creator = trip.creator_id == current_user.id
+    is_participant = db.query(Participant).filter(
+        Participant.trip_id == trip_id,
+        Participant.user_id == current_user.id
+    ).first() is not None
+
+    if not is_creator and not is_participant:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You don't have access to this trip"
+        )
+
+    # Verify expense exists and belongs to this trip
+    expense = db.query(ExpenseModel).filter(
+        ExpenseModel.id == expense_id,
+        ExpenseModel.trip_id == trip_id
+    ).first()
+
+    if not expense:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Expense not found"
+        )
+
+    # Get the position to delete
+    position = db.query(PositionModel).filter(
+        PositionModel.expense_id == expense_id,
+        PositionModel.participant_id == participant_id
+    ).first()
+
+    if not position:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Position not found"
+        )
+
+    # Delete the position
+    db.delete(position)
     db.commit()
 
     return None

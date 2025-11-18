@@ -118,3 +118,15 @@ class ExpenseUpdate(BaseModel):
     payer_id: int | None = Field(default=None, alias="payerId")
     is_even_division: bool | None = Field(default=None, alias="isEvenDivision")
     total_cost: Decimal | None = None
+
+class Position(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, from_attributes=True)
+
+    expense_id: int = Field(alias="expenseId")
+    participant_id: int = Field(alias="participantId")
+
+class PositionCreate(BaseModel):
+    participant_id: int = Field(alias="participantId")
+
+class PositionUpdate(BaseModel):
+    participant_id: int = Field(alias="participantId")
