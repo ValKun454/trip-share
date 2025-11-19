@@ -18,7 +18,7 @@
         <div class="form-row">
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>Friend UID</mat-label>
-            <input matInput formControlName="uid" placeholder="Enter friend's UID">
+            <input matInput formControlName="uid">
             <mat-icon matSuffix>person_add</mat-icon>
             <mat-error *ngIf="addFriendForm.get('uid')?.hasError('required')">UID is required</mat-error>
             <mat-error *ngIf="addFriendForm.get('uid')?.hasError('minlength')">UID must be at least 3 characters</mat-error>
