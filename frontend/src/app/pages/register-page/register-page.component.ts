@@ -58,7 +58,13 @@ export class RegisterPageComponent {
     this.api.register(payload).subscribe({
       next: () => {
         this.isLoading = false;
-        // show “check your email” and keep on this screen
+
+        // Zapisujemy dane do automatycznego logowania:
+        // będą użyte tylko raz po przejściu na stronę logowania.
+        localStorage.setItem('preAuthEmail', payload.email);
+        localStorage.setItem('preAuthPassword', payload.password);
+
+        // pokazujemy info o weryfikacji
         this.successInfo = { email: payload.email };
         this.form.disable();
       },
@@ -84,6 +90,7 @@ export class RegisterPageComponent {
   }
 
   goLogin() {
+    // przejście do logowania – formularz logowania odczyta dane z localStorage
     this.router.navigateByUrl('/login');
   }
 }

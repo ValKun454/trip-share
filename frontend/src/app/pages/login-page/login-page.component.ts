@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -24,7 +24,7 @@ import { Router } from '@angular/router';
   templateUrl: './login-page.component.html',
   styleUrls: ['./login-page.component.css']
 })
-export class LoginPageComponent {
+export class LoginPageComponent implements OnInit {
   loginForm: FormGroup;
   readonly DEMO_EMAIL = 'demo@example.com';
   readonly DEMO_PASSWORD = 'demo123';
@@ -43,7 +43,24 @@ export class LoginPageComponent {
       password: ['', [Validators.required]]
     });
   }
-  
+
+  ngOnInit(): void {
+    // Automatyczne uzupełnienie po rejestracji
+    // Dane są zapisane w localStorage przez stronę rejestracji
+    const preEmail = localStorage.getItem('preAuthEmail');
+    const prePassword = localStorage.getItem('preAuthPassword');
+
+    if (preEmail || prePassword) {
+      this.loginForm.patchValue({
+        email: preEmail ?? '',
+        password: prePassword ?? ''
+      });
+      // Po jednorazowym użyciu czyścimy – to tylko pomoc UX, nie stałe dane
+      localStorage.removeItem('preAuthEmail');
+      localStorage.removeItem('preAuthPassword');
+    }
+  }
+
   goRegister() {
     // nawigacja do rejestracji
     this.router.navigateByUrl('/register');
