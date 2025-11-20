@@ -11,17 +11,17 @@
   <mat-card class="add-friend-card">
     <mat-card-header>
       <mat-card-title>Add a Friend</mat-card-title>
-      <mat-card-subtitle>Enter a friend's UID to add them to your list</mat-card-subtitle>
+      <mat-card-subtitle>Enter a friend's User ID to add them to your list</mat-card-subtitle>
     </mat-card-header>
     <mat-card-content>
       <form [formGroup]="addFriendForm" (ngSubmit)="addFriend()">
         <div class="form-row">
           <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Friend UID</mat-label>
-            <input matInput formControlName="uid">
+            <mat-label>Friend User ID</mat-label>
+            <input matInput formControlName="userId" type="text" inputmode="numeric" pattern="[0-9]*">
             <mat-icon matSuffix>person_add</mat-icon>
-            <mat-error *ngIf="addFriendForm.get('uid')?.hasError('required')">UID is required</mat-error>
-            <mat-error *ngIf="addFriendForm.get('uid')?.hasError('minlength')">UID must be at least 3 characters</mat-error>
+            <mat-error *ngIf="addFriendForm.get('userId')?.hasError('required')">User ID is required</mat-error>
+            <mat-error *ngIf="addFriendForm.get('userId')?.hasError('positiveInteger')">User ID must be a positive number</mat-error>
           </mat-form-field>
         </div>
 
@@ -58,22 +58,22 @@
     <div class="friends-grid">
       <mat-card *ngFor="let friend of friends" class="friend-card">
         <mat-card-header>
-          <div mat-card-avatar class="friend-avatar">{{ getInitials(friend.uid) }}</div>
-          <mat-card-title>{{ friend.username || friend.uid }}</mat-card-title>
-          <mat-card-subtitle>UID: {{ friend.uid }}</mat-card-subtitle>
+          <div mat-card-avatar class="friend-avatar">{{ getInitials(friend.username) }}</div>
+          <mat-card-title>{{ friend.username || 'Friend' }}</mat-card-title>
+          <mat-card-subtitle>ID: {{ friend.userId1 || friend.userId2 || friend.user_id_1 || friend.user_id_2 }}</mat-card-subtitle>
         </mat-card-header>
         <mat-card-content>
           <div class="friend-email" *ngIf="friend.email">
             <mat-icon>email</mat-icon>
             <span>{{ friend.email }}</span>
           </div>
-          <div class="friend-added" *ngIf="friend.addedAt">
+          <div class="friend-added" *ngIf="friend.created_at">
             <mat-icon>schedule</mat-icon>
-            <span>Added {{ friend.addedAt | date:'short' }}</span>
+            <span>Added {{ friend.created_at | date:'short' }}</span>
           </div>
         </mat-card-content>
         <mat-card-actions align="end">
-          <button mat-icon-button color="warn" (click)="removeFriend(friend.uid)" [attr.aria-label]="'Remove ' + friend.uid">
+          <button mat-icon-button color="warn" (click)="removeFriend(friend)" [attr.aria-label]="'Remove friend'">
             <mat-icon>delete</mat-icon>
           </button>
         </mat-card-actions>
@@ -85,6 +85,6 @@
   <div *ngIf="!loading && friends.length === 0" class="empty-state">
     <mat-icon class="empty-icon">people_outline</mat-icon>
     <h3>No friends yet</h3>
-    <p>Start by adding your first friend using their UID above</p>
+    <p>Start by adding your first friend using their User ID above</p>
   </div>
 </section>

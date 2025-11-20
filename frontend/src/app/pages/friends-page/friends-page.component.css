@@ -62,6 +62,18 @@
   width: 100%;
 }
 
+/* Hide spinner for numeric input */
+input[type="text"][inputmode="numeric"]::-webkit-outer-spin-button,
+input[type="text"][inputmode="numeric"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="text"][inputmode="numeric"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
 .form-actions {
   display: flex;
   gap: 8px;
@@ -73,13 +85,15 @@
 .success-message,
 .error-message {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
   padding: 12px 16px;
   border-radius: 8px;
   margin-top: 16px;
   font-size: 0.9rem;
   animation: slideIn 0.3s ease-out;
+  word-break: break-word;
+  max-width: 100%;
 }
 
 .success-message {
@@ -93,6 +107,8 @@
   font-size: 20px;
   width: 20px;
   height: 20px;
+  flex-shrink: 0;
+  margin-top: 2px;
 }
 
 .error-message {
@@ -106,6 +122,8 @@
   font-size: 20px;
   width: 20px;
   height: 20px;
+  flex-shrink: 0;
+  margin-top: 2px;
 }
 
 @keyframes slideIn {

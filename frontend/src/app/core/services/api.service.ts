@@ -92,6 +92,29 @@ export class ApiService {
     return this.http.delete<void>(`${this.base}/trips/${tripId}`, this.getAuthHeaders());
   }
 
+  // Friends endpoints
+  /**
+   * Get all friends for current user
+   */
+  getFriends(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.base}/friends`, this.getAuthHeaders());
+  }
+
+  /**
+   * Add a friend by user ID
+   */
+  addFriend(friendId: number): Observable<any> {
+    const payload = { friendId: friendId };
+    return this.http.post<any>(`${this.base}/friends`, payload, this.getAuthHeaders());
+  }
+
+  /**
+   * Remove a friend by user ID
+   */
+  removeFriend(friendId: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/friends/${friendId}`, this.getAuthHeaders());
+  }
+
   // traty
   getExpenses(tripId: number): Observable<Expense[]> {
     return this.http.get<Expense[]>(`${this.base}/trips/${tripId}/expenses`, this.getAuthHeaders());
