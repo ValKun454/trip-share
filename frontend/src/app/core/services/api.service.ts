@@ -33,6 +33,20 @@ export class ApiService {
     return this.http.get(`${this.base}/me`, this.getAuthHeaders());
   }
 
+  /**
+   * Update current user's information
+   * Can update username, email, or password
+   * Expects snake_case field names: { username, email, password }
+   */
+  updateMe(data: any): Observable<any> {
+    const payload: any = {};
+    if (data.username !== undefined) payload.username = data.username;
+    if (data.email !== undefined) payload.email = data.email;
+    if (data.password !== undefined) payload.password = data.password;
+    
+    return this.http.put(`${this.base}/me`, payload, this.getAuthHeaders());
+  }
+
   // register user, backend expects { email, username, password }
   register(payload: { email: string; username: string; password: string }): Observable<any> {
     return this.http.post(`${this.base}/register`, payload);

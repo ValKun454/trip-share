@@ -80,6 +80,10 @@ export class AuthService {
     return userStr ? JSON.parse(userStr) : null;
   }
 
+  setCurrentUser(user: any): void {
+    localStorage.setItem('currentUser', JSON.stringify(user));
+  }
+
   isAuthenticated(): boolean {
     return this.hasToken();
   }

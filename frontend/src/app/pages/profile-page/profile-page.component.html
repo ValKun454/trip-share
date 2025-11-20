@@ -39,9 +39,19 @@
     </div>
 
     <div class="actions">
-      <button mat-raised-button color="primary" (click)="save()" [disabled]="nickname.pristine">
-        Save Changes
+      <button mat-raised-button color="primary" (click)="save()" [disabled]="nickname.pristine || saving">
+        {{ saving ? 'Saving...' : 'Save Changes' }}
       </button>
+    </div>
+
+    <!-- Success Message -->
+    <div class="success-message" *ngIf="successMessage">
+      <strong>✓</strong> {{ successMessage }}
+    </div>
+
+    <!-- Error Message -->
+    <div class="error-message" *ngIf="error">
+      <strong>✕</strong> {{ error }}
     </div>
 
   </div>
