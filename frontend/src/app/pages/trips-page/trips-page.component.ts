@@ -82,6 +82,7 @@ export class TripsPageComponent implements OnInit {
 
   form = inject(FormBuilder).group({
     name: ['', [Validators.required, Validators.minLength(2)]],
+    description: ['', [Validators.maxLength(500)]],
     startDate: [''],
     endDate: [''],
     participants: ['']
@@ -194,6 +195,7 @@ export class TripsPageComponent implements OnInit {
 
     const val = this.form.value as any;
     const name = (val.name ?? '').toString().trim();
+    const description = (val.description ?? '').toString().trim();
     const participantsRaw = (val.participants ?? '').toString().trim();
 
     // Parsujemy uczestników jako ID użytkowników oddzielone przecinkiem
@@ -211,16 +213,19 @@ export class TripsPageComponent implements OnInit {
     const startLabel = this.toDDMMYYYY(val.startDate);
     const endLabel = this.toDDMMYYYY(val.endDate);
 
-    // opis zapisujemy tak, żeby dało się go później łatwo sparsować
-    let description = '';
-    if (startLabel && endLabel) {
-      description = `Trip: ${startLabel} – ${endLabel}`;
-    } else if (startLabel) {
-      description = `Trip: ${startLabel}`;
-    } else if (endLabel) {
-      description = `Trip: do ${endLabel}`;
-    } else {
-      description = '';
+    // opis: jeśli użytkownik wpisał własny opis, używamy go
+    // w przeciwnym razie budujemy automatycznie z dat
+    let finalDescription = description;
+    if (!finalDescription) {
+      if (startLabel && endLabel) {
+        finalDescription = `Trip: ${startLabel} – ${endLabel}`;
+      } else if (startLabel) {
+        finalDescription = `Trip: ${startLabel}`;
+      } else if (endLabel) {
+        finalDescription = `Trip: do ${endLabel}`;
+      } else {
+        finalDescription = '';
+      }
     }
 
     // Check if we're editing or creating
@@ -228,7 +233,7 @@ export class TripsPageComponent implements OnInit {
       // Update existing trip
       const updateDto = {
         name,
-        description,
+        description: finalDescription,
         participants
       };
       console.log('Updating trip', this.editingTripId, 'with DTO:', updateDto);
@@ -247,7 +252,7 @@ export class TripsPageComponent implements OnInit {
       // Create new trip
       const dto: CreateTrip = {
         name,
-        description,
+        description: finalDescription,
         participants
       };
 
@@ -296,6 +301,7 @@ export class TripsPageComponent implements OnInit {
     this.editingTripId = trip.id;
     this.form.patchValue({
       name: trip.name,
+      description: trip.description || '',
       participants: trip.participants?.join(', ') || ''
     });
     this.showCreate = true;

@@ -22,6 +22,13 @@
         <mat-error *ngIf="form.get('name')?.hasError('minlength')">Trip name must be at least 2 characters</mat-error>
       </mat-form-field>
 
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Description (optional)</mat-label>
+        <textarea matInput formControlName="description" rows="3" maxlength="500"></textarea>
+        <mat-hint align="end">{{ (form.get('description')?.value || '').length }}/500</mat-hint>
+        <mat-error *ngIf="form.get('description')?.hasError('maxlength')">Description must be 500 characters or less</mat-error>
+      </mat-form-field>
+
       <div class="dates-row" style="display:flex; gap:12px; align-items:flex-start;">
         <mat-form-field appearance="outline" style="flex:1;">
           <mat-label>Start date (optional)</mat-label>
