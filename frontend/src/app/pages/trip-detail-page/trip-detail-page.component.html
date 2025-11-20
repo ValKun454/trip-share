@@ -4,6 +4,12 @@
   </button>
   <span class="title">{{ trip?.name || 'Trip Details' }}</span>
   <span class="spacer"></span>
+  <button mat-icon-button color="accent" matTooltip="Edit trip" (click)="editTrip()">
+    <mat-icon>edit</mat-icon>
+  </button>
+  <button mat-icon-button color="warn" matTooltip="Delete trip" (click)="deleteTrip()">
+    <mat-icon>delete</mat-icon>
+  </button>
   <button mat-flat-button color="accent" (click)="toggleAddExpense()" *ngIf="!showAddExpense">
     <mat-icon>add</mat-icon>
     Add Expense

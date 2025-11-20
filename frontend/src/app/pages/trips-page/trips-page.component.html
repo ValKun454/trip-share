@@ -12,7 +12,7 @@
 
 <section class="content">
   <div *ngIf="showCreate" class="create-panel">
-    <h3>Create a trip</h3>
+    <h3>{{ editingTripId ? 'Edit Trip' : 'Create a trip' }}</h3>
     <form [formGroup]="form" (ngSubmit)="createTrip()">
 
       <mat-form-field appearance="outline" class="full-width">
@@ -54,7 +54,9 @@
 
       <div class="actions">
         <button mat-stroked-button type="button" (click)="toggleCreate()">Cancel</button>
-        <button mat-flat-button color="primary" type="submit" [disabled]="!form.get('name')?.valid">Create</button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="!form.get('name')?.valid">
+          {{ editingTripId ? 'Update' : 'Create' }}
+        </button>
       </div>
     </form>
   </div>
@@ -84,6 +86,12 @@
           <mat-icon>open_in_new</mat-icon>
           Open
         </a>
+        <button mat-icon-button color="accent" matTooltip="Edit trip" (click)="editTrip(t)">
+          <mat-icon>edit</mat-icon>
+        </button>
+        <button mat-icon-button color="warn" matTooltip="Delete trip" (click)="deleteTrip(t.id)">
+          <mat-icon>delete</mat-icon>
+        </button>
       </mat-card-actions>
     </mat-card>
   </div>

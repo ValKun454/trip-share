@@ -68,6 +68,30 @@ export class ApiService {
     return this.http.post<any>(`${this.base}/trips`, payload, this.getAuthHeaders());
   }
 
+  /**
+   * Update trip - send snake_case field names expected by backend
+   * Backend schema TripUpdate: { name, description, beginning_date, end_date, participants }
+   */
+  updateTrip(tripId: number, dto: any): Observable<GetTrip> {
+    const payload: any = {
+      name: dto.name || undefined,
+      description: dto.description || undefined,
+      beginning_date: dto.beginningDate || undefined,
+      end_date: dto.endDate || undefined,
+      participants: dto.participants || undefined
+    };
+    // Remove undefined values
+    Object.keys(payload).forEach(key => payload[key] === undefined && delete payload[key]);
+    return this.http.put<GetTrip>(`${this.base}/trips/${tripId}`, payload, this.getAuthHeaders());
+  }
+
+  /**
+   * Delete trip
+   */
+  deleteTrip(tripId: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/trips/${tripId}`, this.getAuthHeaders());
+  }
+
   // traty
   getExpenses(tripId: number): Observable<Expense[]> {
     return this.http.get<Expense[]>(`${this.base}/trips/${tripId}/expenses`, this.getAuthHeaders());
