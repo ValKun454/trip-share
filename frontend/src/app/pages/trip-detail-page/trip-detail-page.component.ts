@@ -11,6 +11,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 import { ApiService } from '../../core/services/api.service';
 import { GetTrip } from '../../core/models/trip.model';
@@ -31,7 +32,8 @@ import { AuthService } from '../../core/services/auth.service';
     MatProgressSpinnerModule,
     MatToolbarModule,
     MatCheckboxModule,
-    MatDividerModule
+    MatDividerModule,
+    MatTooltipModule
   ],
   templateUrl: './trip-detail-page.component.html',
   styleUrls: ['./trip-detail-page.component.css']
@@ -194,6 +196,27 @@ export class TripDetailPageComponent implements OnInit {
 
     // Backend nie ma endpointu delete – tylko komunikat
     alert('Delete functionality not yet implemented on backend');
+  }
+
+  editTrip() {
+    alert('Edit trip functionality coming soon');
+  }
+
+  deleteTrip() {
+    if (!this.trip || !confirm('Are you sure you want to delete this trip? This action cannot be undone.')) {
+      return;
+    }
+
+    this.api.deleteTrip(this.trip.id).subscribe({
+      next: () => {
+        console.log('Trip deleted successfully');
+        this.router.navigate(['/trips']);
+      },
+      error: (e) => {
+        console.error('Delete trip failed', e);
+        this.error = e?.error?.detail || 'Failed to delete trip';
+      }
+    });
   }
 
   goBack() {

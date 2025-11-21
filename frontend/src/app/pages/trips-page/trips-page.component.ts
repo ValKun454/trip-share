@@ -11,6 +11,7 @@ import { MatFormFieldModule } from "@angular/material/form-field";
 import { MatDatepickerModule } from "@angular/material/datepicker";
 import { MatNativeDateModule } from "@angular/material/core";
 import { MAT_DATE_FORMATS, MAT_DATE_LOCALE, DateAdapter } from "@angular/material/core";
+import { MatTooltipModule } from "@angular/material/tooltip";
 import { RouterModule } from "@angular/router";
 import { ApiService } from "../../core/services/api.service";
 import { GetTrip, CreateTrip } from "../../core/models/trip.model";
@@ -63,6 +64,7 @@ function startBeforeEnd(): ValidatorFn {
     MatFormFieldModule,
     MatDatepickerModule,
     MatNativeDateModule,
+    MatTooltipModule,
     RouterModule
   ],
   templateUrl: "./trips-page.component.html",
@@ -76,9 +78,11 @@ export class TripsPageComponent implements OnInit {
   summaries: Record<string, string> = {};
 
   showCreate = false;
+  editingTripId: number | null = null;
 
   form = inject(FormBuilder).group({
     name: ['', [Validators.required, Validators.minLength(2)]],
+    description: ['', [Validators.maxLength(500)]],
     startDate: [''],
     endDate: [''],
     participants: ['']
@@ -174,7 +178,10 @@ export class TripsPageComponent implements OnInit {
 
   toggleCreate() {
     this.showCreate = !this.showCreate;
-    if (!this.showCreate) this.form.reset();
+    if (!this.showCreate) {
+      this.form.reset();
+      this.editingTripId = null;
+    }
   }
 
   createTrip() {
@@ -188,6 +195,7 @@ export class TripsPageComponent implements OnInit {
 
     const val = this.form.value as any;
     const name = (val.name ?? '').toString().trim();
+    const description = (val.description ?? '').toString().trim();
     const participantsRaw = (val.participants ?? '').toString().trim();
 
     // Parsujemy uczestników jako ID użytkowników oddzielone przecinkiem
@@ -205,42 +213,68 @@ export class TripsPageComponent implements OnInit {
     const startLabel = this.toDDMMYYYY(val.startDate);
     const endLabel = this.toDDMMYYYY(val.endDate);
 
-    // opis zapisujemy tak, żeby dało się go później łatwo sparsować
-    let description = '';
-    if (startLabel && endLabel) {
-      description = `Trip: ${startLabel} – ${endLabel}`;
-    } else if (startLabel) {
-      description = `Trip: ${startLabel}`;
-    } else if (endLabel) {
-      description = `Trip: do ${endLabel}`;
-    } else {
-      description = '';
+    // opis: jeśli użytkownik wpisał własny opis, używamy go
+    // w przeciwnym razie budujemy automatycznie z dat
+    let finalDescription = description;
+    if (!finalDescription) {
+      if (startLabel && endLabel) {
+        finalDescription = `Trip: ${startLabel} – ${endLabel}`;
+      } else if (startLabel) {
+        finalDescription = `Trip: ${startLabel}`;
+      } else if (endLabel) {
+        finalDescription = `Trip: do ${endLabel}`;
+      } else {
+        finalDescription = '';
+      }
     }
 
-    const dto: CreateTrip = {
-      name,
-      description,
-      participants
-    };
-
-    console.log('Creating trip with DTO:', dto);
-
-    this.api.createTrip(dto).subscribe({
-      next: (response: any) => {
-        console.log('Trip created successfully:', response);
-        const tripId = response?.id;
-        if (tripId) {
+    // Check if we're editing or creating
+    if (this.editingTripId) {
+      // Update existing trip
+      const updateDto = {
+        name,
+        description: finalDescription,
+        participants
+      };
+      console.log('Updating trip', this.editingTripId, 'with DTO:', updateDto);
+      this.api.updateTrip(this.editingTripId, updateDto).subscribe({
+        next: (response: any) => {
+          console.log('Trip updated successfully:', response);
           this.toggleCreate();
           this.loadTrips();
-        } else {
-          this.error = 'Trip created but response format unexpected';
+        },
+        error: (e) => {
+          console.error('Update trip failed', e);
+          this.error = e?.error?.detail || 'Failed to update trip';
         }
-      },
-      error: (e) => {
-        console.error('Create trip failed', e);
-        this.error = e?.error?.detail || 'Failed to create trip';
-      }
-    });
+      });
+    } else {
+      // Create new trip
+      const dto: CreateTrip = {
+        name,
+        description: finalDescription,
+        participants
+      };
+
+      console.log('Creating trip with DTO:', dto);
+
+      this.api.createTrip(dto).subscribe({
+        next: (response: any) => {
+          console.log('Trip created successfully:', response);
+          const tripId = response?.id;
+          if (tripId) {
+            this.toggleCreate();
+            this.loadTrips();
+          } else {
+            this.error = 'Trip created but response format unexpected';
+          }
+        },
+        error: (e) => {
+          console.error('Create trip failed', e);
+          this.error = e?.error?.detail || 'Failed to create trip';
+        }
+      });
+    }
   }
 
   loadSummary(tripId: string) {
@@ -258,6 +292,38 @@ export class TripsPageComponent implements OnInit {
       },
       error: () => {
         this.summaries[tripId] = 'N/A';
+      }
+    });
+  }
+
+  editTrip(trip: GetTrip) {
+    // Set editing mode and populate form with trip data
+    this.editingTripId = trip.id;
+    this.form.patchValue({
+      name: trip.name,
+      description: trip.description || '',
+      participants: trip.participants?.join(', ') || ''
+    });
+    this.showCreate = true;
+    // Scroll to form
+    setTimeout(() => {
+      document.querySelector('.create-panel')?.scrollIntoView({ behavior: 'smooth' });
+    });
+  }
+
+  deleteTrip(tripId: number) {
+    if (!confirm('Are you sure you want to delete this trip? This action cannot be undone.')) {
+      return;
+    }
+
+    this.api.deleteTrip(tripId).subscribe({
+      next: () => {
+        console.log('Trip deleted successfully');
+        this.loadTrips();
+      },
+      error: (e) => {
+        console.error('Delete trip failed', e);
+        this.error = e?.error?.detail || 'Failed to delete trip';
       }
     });
   }

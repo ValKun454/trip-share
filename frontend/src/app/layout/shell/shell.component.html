@@ -1,40 +1,57 @@
 <mat-sidenav-container class="layout">
-    <mat-sidenav
-      #snav
-      [mode]="(isHandset$ | async) ? 'over' : 'side'"
-      [opened]="!(isHandset$ | async)"
-      class="sidenav"
-    >
-      <mat-toolbar class="sidenav__header">
+  <mat-sidenav
+    #snav
+    [mode]="(isHandset$ | async) ? 'over' : 'side'"
+    [opened]="!(isHandset$ | async)"
+    class="sidenav"
+  >
+    <mat-toolbar class="sidenav__header">
+      <!-- Logo: klik = powrót na /trips -->
+      <a
+        *ngIf="!(isHandset$ | async); else logoMobile"
+        routerLink="/trips"
+        class="logo-link"
+      >
         <img src="./logo.png" alt="TripShare Logo" class="logo" />
-      </mat-toolbar>
+      </a>
 
-      <div class="nav-container">
-        <mat-nav-list class="nav">
-          <a mat-list-item routerLink="/trips" routerLinkActive="active"
-             *ngIf="!(isHandset$ | async); else tripsMobile">
+      <!-- Wersja mobilna – dodatkowo zamykamy menu -->
+      <ng-template #logoMobile>
+        <a
+          routerLink="/trips"
+          class="logo-link"
+          (click)="snav.close()"
+        >
+          <img src="./logo.png" alt="TripShare Logo" class="logo" />
+        </a>
+      </ng-template>
+    </mat-toolbar>
+
+    <div class="nav-container">
+      <mat-nav-list class="nav">
+        <a mat-list-item routerLink="/trips" routerLinkActive="active"
+           *ngIf="!(isHandset$ | async); else tripsMobile">
+          <mat-icon matListItemIcon>receipt_long</mat-icon>
+          <span matListItemTitle>Trips</span>
+        </a>
+        <ng-template #tripsMobile>
+          <a mat-list-item routerLink="/trips" routerLinkActive="active" (click)="snav.close()">
             <mat-icon matListItemIcon>receipt_long</mat-icon>
             <span matListItemTitle>Trips</span>
           </a>
-          <ng-template #tripsMobile>
-            <a mat-list-item routerLink="/trips" routerLinkActive="active" (click)="snav.close()">
-              <mat-icon matListItemIcon>receipt_long</mat-icon>
-              <span matListItemTitle>Trips</span>
-            </a>
-          </ng-template>
+        </ng-template>
 
-          <a mat-list-item routerLink="/expenses" routerLinkActive="active"
-            *ngIf="!(isHandset$ | async); else expensesMobile">
+        <a mat-list-item routerLink="/expenses" routerLinkActive="active"
+          *ngIf="!(isHandset$ | async); else expensesMobile">
+          <mat-icon matListItemIcon>account_balance_wallet</mat-icon>
+          <span matListItemTitle>Total Expenses</span>
+        </a>
+        <ng-template #expensesMobile>
+          <a mat-list-item routerLink="/expenses" routerLinkActive="active" (click)="snav.close()">
             <mat-icon matListItemIcon>account_balance_wallet</mat-icon>
             <span matListItemTitle>Total Expenses</span>
           </a>
-          <ng-template #expensesMobile>
-            <a mat-list-item routerLink="/expenses" routerLinkActive="active" (click)="snav.close()">
-              <mat-icon matListItemIcon>account_balance_wallet</mat-icon>
-              <span matListItemTitle>Total Expenses</span>
-            </a>
-          </ng-template>
-
+        </ng-template>
 
         <a mat-list-item routerLink="/profile" routerLinkActive="active"
           *ngIf="!(isHandset$ | async); else profileMobile">
@@ -59,51 +76,51 @@
             <span matListItemTitle>Friends</span>
           </a>
         </ng-template>
-          
-          <a mat-list-item routerLink="/contact" routerLinkActive="active"
-             *ngIf="!(isHandset$ | async); else contactMobile">
+        
+        <a mat-list-item routerLink="/contact" routerLinkActive="active"
+           *ngIf="!(isHandset$ | async); else contactMobile">
+          <mat-icon matListItemIcon>contact_mail</mat-icon>
+          <span matListItemTitle>Contact Us</span>
+        </a>
+        <ng-template #contactMobile>
+          <a mat-list-item routerLink="/contact" routerLinkActive="active" (click)="snav.close()">
             <mat-icon matListItemIcon>contact_mail</mat-icon>
             <span matListItemTitle>Contact Us</span>
           </a>
-          <ng-template #contactMobile>
-            <a mat-list-item routerLink="/contact" routerLinkActive="active" (click)="snav.close()">
-              <mat-icon matListItemIcon>contact_mail</mat-icon>
-              <span matListItemTitle>Contact Us</span>
-            </a>
-          </ng-template>
-        </mat-nav-list>
+        </ng-template>
+      </mat-nav-list>
 
-        <!-- User Profile & Logout Section -->
-        <div class="user-section">
-          <mat-divider></mat-divider>
-          
-          <div class="user-info" *ngIf="getCurrentUser() as user">
-            <mat-icon class="user-avatar">account_circle</mat-icon>
-            <div class="user-details">
-              <span class="username">{{ user.username }}</span>
-              <span class="login-time">{{ user.loginTime | date:'short' }}</span>
-            </div>
+      <!-- User Profile & Logout Section -->
+      <div class="user-section">
+        <mat-divider></mat-divider>
+        
+        <div class="user-info" *ngIf="getCurrentUser() as user">
+          <mat-icon class="user-avatar">account_circle</mat-icon>
+          <div class="user-details">
+            <span class="username">{{ user.username }}</span>
+            <span class="login-time">{{ user.loginTime | date:'short' }}</span>
           </div>
-          
-          <button mat-list-item (click)="logout()" class="logout-btn"
-                  *ngIf="!(isHandset$ | async); else logoutMobile">
+        </div>
+        
+        <button mat-list-item (click)="logout()" class="logout-btn"
+                *ngIf="!(isHandset$ | async); else logoutMobile">
+          <mat-icon matListItemIcon>logout</mat-icon>
+          <span matListItemTitle>Logout</span>
+        </button>
+        <ng-template #logoutMobile>
+          <button mat-list-item (click)="logout(); snav.close()" class="logout-btn">
             <mat-icon matListItemIcon>logout</mat-icon>
             <span matListItemTitle>Logout</span>
           </button>
-          <ng-template #logoutMobile>
-            <button mat-list-item (click)="logout(); snav.close()" class="logout-btn">
-              <mat-icon matListItemIcon>logout</mat-icon>
-              <span matListItemTitle>Logout</span>
-            </button>
-          </ng-template>
-        </div>
+        </ng-template>
       </div>
-    </mat-sidenav>
+    </div>
+  </mat-sidenav>
 
-    <mat-sidenav-content>
-     <main class="content">
-        <router-outlet></router-outlet>
-      </main>
-    </mat-sidenav-content>
+  <mat-sidenav-content>
+    <main class="content">
+      <router-outlet></router-outlet>
+    </main>
+  </mat-sidenav-content>
 
-  </mat-sidenav-container>
+</mat-sidenav-container>

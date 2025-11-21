@@ -192,3 +192,11 @@
     .nav {
       flex: 1;
     }
+
+    /* Link z logo – klik prowadzi na stronę główną (Trips) */
+    .logo-link {
+      display: flex;              /* logo ładnie wyrównane w toolbarze */
+      align-items: center;
+      text-decoration: none;      /* bez podkreślenia */
+    }
+

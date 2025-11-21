@@ -1,6 +1,6 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
@@ -8,13 +8,36 @@ import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatToolbarModule } from '@angular/material/toolbar';
-import { AuthService } from '../../core/services/auth.service';
+import { ApiService } from '../../core/services/api.service';
 
 interface Friend {
-  uid: string;
+  id?: number;
+  userId1?: number;
+  userId2?: number;
+  user_id_1?: number;  // fallback for snake_case
+  user_id_2?: number;  // fallback for snake_case
   username?: string;
   email?: string;
-  addedAt?: string;
+  created_at?: string;
+}
+
+interface CurrentUser {
+  id: number;
+  email: string;
+  username: string;
+  isVerified: boolean;
+}
+
+// Custom validator for positive integer string values
+function positiveIntegerValidator(control: AbstractControl): ValidationErrors | null {
+  if (!control.value) {
+    return null; // Let required validator handle this
+  }
+  const value = Number(control.value);
+  if (isNaN(value) || value <= 0 || !Number.isInteger(value)) {
+    return { positiveInteger: true };
+  }
+  return null;
 }
 
 @Component({
@@ -35,39 +58,52 @@ interface Friend {
   styleUrls: ['./friends-page.component.css']
 })
 export class FriendsPageComponent implements OnInit {
-  private auth = inject(AuthService);
+  private api = inject(ApiService);
   private fb = inject(FormBuilder);
 
   friends: Friend[] = [];
   loading = false;
   error: string | null = null;
   successMessage: string | null = null;
+  currentUser: CurrentUser | null = null;
 
   addFriendForm: FormGroup;
 
   constructor() {
     this.addFriendForm = this.fb.group({
-      uid: ['', [Validators.required, Validators.minLength(3)]]
+      userId: ['', [Validators.required, positiveIntegerValidator]]
     });
   }
 
   ngOnInit(): void {
-    this.loadFriends();
+    // Get current user first to know which ID belongs to the current user
+    this.api.getMe().subscribe({
+      next: (user) => {
+        this.currentUser = user;
+        this.loadFriends();
+      },
+      error: (e) => {
+        console.error('Failed to get current user', e);
+        this.error = 'Failed to load user info';
+      }
+    });
   }
 
   loadFriends(): void {
     this.loading = true;
     this.error = null;
     
-    // Simulate loading friends from localStorage or backend
-    // In real implementation, this would call an API endpoint
-    const stored = localStorage.getItem('userFriends');
-    if (stored) {
-      this.friends = JSON.parse(stored);
-    } else {
-      this.friends = [];
-    }
-    this.loading = false;
+    this.api.getFriends().subscribe({
+      next: (friends) => {
+        this.friends = friends;
+        this.loading = false;
+      },
+      error: (e) => {
+        console.error('Failed to load friends', e);
+        this.error = 'Failed to load friends';
+        this.loading = false;
+      }
+    });
   }
 
   addFriend(): void {
@@ -76,54 +112,129 @@ export class FriendsPageComponent implements OnInit {
       return;
     }
 
-    const uid = this.addFriendForm.get('uid')?.value?.trim();
+    const friendId = Number(this.addFriendForm.get('userId')?.value);
 
     // Check if friend already exists
-    if (this.friends.some(f => f.uid === uid)) {
+    if (this.friends.some(f => 
+      (f.userId1 === friendId || f.userId2 === friendId) || 
+      (f.user_id_1 === friendId || f.user_id_2 === friendId)
+    )) {
       this.error = 'This friend is already in your list';
       this.successMessage = null;
       return;
     }
 
-    // Check if trying to add self
-    const currentUser = this.auth.getCurrentUser();
-    if (currentUser && currentUser.uid === uid) {
-      this.error = 'You cannot add yourself as a friend';
-      this.successMessage = null;
+    this.api.addFriend(friendId).subscribe({
+      next: (newFriend) => {
+        this.friends.push(newFriend);
+        this.successMessage = `Friend with ID ${friendId} added successfully!`;
+        this.error = null;
+        this.addFriendForm.reset();
+
+        // Clear success message after 3 seconds
+        setTimeout(() => {
+          this.successMessage = null;
+        }, 3000);
+      },
+      error: (e) => {
+        console.error('Failed to add friend', e);
+        let errorMsg = 'Failed to add friend';
+        
+        // Handle Pydantic validation errors (array of error objects)
+        if (Array.isArray(e?.error?.detail)) {
+          const firstError = e.error.detail[0];
+          if (firstError?.msg) {
+            errorMsg = firstError.msg;
+          } else if (firstError?.type) {
+            errorMsg = firstError.type;
+          }
+        } else if (typeof e?.error?.detail === 'string') {
+          // Handle string detail messages from backend
+          errorMsg = e.error.detail;
+        } else if (e?.error?.message) {
+          errorMsg = e.error.message;
+        } else if (e?.message) {
+          errorMsg = e.message;
+        }
+        this.error = errorMsg;
+        this.successMessage = null;
+      }
+    });
+  }
+
+  removeFriend(friend: Friend): void {
+    // Get the other friend's ID - try to identify which one is NOT the current user
+    let friendId = this.getOtherFriendId(friend);
+    
+    // Fallback: if we still got 0, try the camelCase field names
+    if (friendId === 0) {
+      friendId = (friend.userId1 !== 0 && friend.userId1 !== undefined ? friend.userId1 : friend.userId2) || 0;
+    }
+    
+    // Fallback: if we still got 0, try snake_case field names
+    if (friendId === 0) {
+      friendId = (friend.user_id_1 !== 0 && friend.user_id_1 !== undefined ? friend.user_id_1 : friend.user_id_2) || 0;
+    }
+    
+    if (friendId === 0) {
+      this.error = 'Error: Could not determine friend ID';
+      return;
+    }
+    
+    if (!confirm('Remove this friend?')) {
       return;
     }
 
-    // Add friend (in real app, would call backend to verify UID exists)
-    const newFriend: Friend = {
-      uid,
-      addedAt: new Date().toISOString()
-    };
+    this.api.removeFriend(friendId).subscribe({
+      next: () => {
+        this.friends = this.friends.filter(f => 
+          !((f.userId1 === friendId || f.userId2 === friendId) || 
+            (f.user_id_1 === friendId || f.user_id_2 === friendId))
+        );
+        this.successMessage = 'Friend removed';
+        this.error = null;
+        setTimeout(() => {
+          this.successMessage = null;
+        }, 2000);
+      },
+      error: (e) => {
+        console.error('Failed to remove friend', e);
+        this.error = e?.error?.detail || 'Failed to remove friend';
+        this.successMessage = null;
+      }
+    });
+  }
 
-    this.friends.push(newFriend);
+  getInitials(username: string | undefined): string {
+    if (!username) return 'FR';
+    return username.substring(0, 2).toUpperCase();
+  }
+
+  /**
+   * Get the OTHER friend's ID (not the current user's ID)
+   * Since friendships are stored as (userId1, userId2) where userId1 < userId2,
+   * we need to determine which one is the friend based on current user's ID
+   */
+  getOtherFriendId(friend: Friend): number {
+    if (!this.currentUser) {
+      // If currentUser not available yet, just return one of the non-zero IDs
+      // Try camelCase first, then snake_case
+      return (friend.userId1 !== 0 && friend.userId1 !== undefined ? friend.userId1 : 
+              friend.userId2 !== 0 && friend.userId2 !== undefined ? friend.userId2 :
+              friend.user_id_1 !== 0 && friend.user_id_1 !== undefined ? friend.user_id_1 :
+              friend.user_id_2) || 0;
+    }
     
-    // Save to localStorage
-    localStorage.setItem('userFriends', JSON.stringify(this.friends));
-
-    this.successMessage = `Friend with UID "${uid}" added successfully!`;
-    this.error = null;
-    this.addFriendForm.reset();
-
-    // Clear success message after 3 seconds
-    setTimeout(() => {
-      this.successMessage = null;
-    }, 3000);
-  }
-
-  removeFriend(uid: string): void {
-    this.friends = this.friends.filter(f => f.uid !== uid);
-    localStorage.setItem('userFriends', JSON.stringify(this.friends));
-    this.successMessage = `Friend removed`;
-    setTimeout(() => {
-      this.successMessage = null;
-    }, 2000);
-  }
-
-  getInitials(uid: string): string {
-    return uid.substring(0, 2).toUpperCase();
+    // Try camelCase field names first
+    const userId1 = friend.userId1 || friend.user_id_1;
+    const userId2 = friend.userId2 || friend.user_id_2;
+    
+    // If current user's ID is userId1, then the friend is userId2
+    if (this.currentUser.id === userId1) {
+      return userId2 || 0;
+    }
+    // Otherwise the friend is userId1
+    return userId1 || 0;
   }
 }
+

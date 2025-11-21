@@ -33,6 +33,20 @@ export class ApiService {
     return this.http.get(`${this.base}/me`, this.getAuthHeaders());
   }
 
+  /**
+   * Update current user's information
+   * Can update username, email, or password
+   * Expects snake_case field names: { username, email, password }
+   */
+  updateMe(data: any): Observable<any> {
+    const payload: any = {};
+    if (data.username !== undefined) payload.username = data.username;
+    if (data.email !== undefined) payload.email = data.email;
+    if (data.password !== undefined) payload.password = data.password;
+    
+    return this.http.put(`${this.base}/me`, payload, this.getAuthHeaders());
+  }
+
   // register user, backend expects { email, username, password }
   register(payload: { email: string; username: string; password: string }): Observable<any> {
     return this.http.post(`${this.base}/register`, payload);
@@ -66,6 +80,53 @@ export class ApiService {
       participants: dto.participants || []
     };
     return this.http.post<any>(`${this.base}/trips`, payload, this.getAuthHeaders());
+  }
+
+  /**
+   * Update trip - send snake_case field names expected by backend
+   * Backend schema TripUpdate: { name, description, beginning_date, end_date, participants }
+   */
+  updateTrip(tripId: number, dto: any): Observable<GetTrip> {
+    const payload: any = {
+      name: dto.name || undefined,
+      description: dto.description || undefined,
+      beginning_date: dto.beginningDate || undefined,
+      end_date: dto.endDate || undefined,
+      participants: dto.participants || undefined
+    };
+    // Remove undefined values
+    Object.keys(payload).forEach(key => payload[key] === undefined && delete payload[key]);
+    return this.http.put<GetTrip>(`${this.base}/trips/${tripId}`, payload, this.getAuthHeaders());
+  }
+
+  /**
+   * Delete trip
+   */
+  deleteTrip(tripId: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/trips/${tripId}`, this.getAuthHeaders());
+  }
+
+  // Friends endpoints
+  /**
+   * Get all friends for current user
+   */
+  getFriends(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.base}/friends`, this.getAuthHeaders());
+  }
+
+  /**
+   * Add a friend by user ID
+   */
+  addFriend(friendId: number): Observable<any> {
+    const payload = { friendId: friendId };
+    return this.http.post<any>(`${this.base}/friends`, payload, this.getAuthHeaders());
+  }
+
+  /**
+   * Remove a friend by user ID
+   */
+  removeFriend(friendId: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/friends/${friendId}`, this.getAuthHeaders());
   }
 
   // traty
