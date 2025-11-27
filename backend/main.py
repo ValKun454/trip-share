@@ -254,6 +254,34 @@ async def get_friends(
 
     return friends
 
+@prefix_router.get("/friends/list", response_model=list[FriendUser])
+async def get_friends_list(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get list of friends for the current user
+    Returns only user id and username for each friend
+    """
+    # Get all friendships involving the current user
+    friendships = db.query(Friend).filter(
+        (Friend.user_id_1 == current_user.id) | (Friend.user_id_2 == current_user.id)
+    ).all()
+
+    # Extract friend user IDs
+    friend_ids = []
+    for friendship in friendships:
+        if friendship.user_id_1 == current_user.id:
+            friend_ids.append(friendship.user_id_2)
+        else:
+            friend_ids.append(friendship.user_id_1)
+
+    # Get user details for all friends
+    friends = db.query(User).filter(User.id.in_(friend_ids)).all()
+
+    # Return only id and username
+    return [{"id": friend.id, "username": friend.username} for friend in friends]
+
 @prefix_router.post("/friends", response_model=FriendResponse, status_code=status.HTTP_201_CREATED)
 async def add_friend(
     data: FriendCreate,

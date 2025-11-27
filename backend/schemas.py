@@ -141,3 +141,10 @@ class FriendResponse(BaseModel):
 
 class FriendCreate(BaseModel):
     friend_id: int = Field(alias="friendId")
+
+class FriendUser(BaseModel):
+    """Schema for returning user info in friendlist"""
+    model_config = ConfigDict(populate_by_name=True)
+
+    id: int
+    username: str
