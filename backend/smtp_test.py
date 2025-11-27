@@ -1,10 +1,14 @@
 import smtplib
 from email.mime.text import MIMEText
+import os
+from dotenv import load_dotenv
 
-smtp_server = "smtp.gmail.com"
-smtp_port = 465
-smtp_username = "noreply.tripnshare@gmail.com"
-smtp_password = "btiy qukm enyn tkbe"
+load_dotenv()
+
+smtp_server = os.getenv("SMTP_SERVER")
+smtp_port = int(os.getenv("SMTP_PORT"))
+smtp_username = os.getenv("SMTP_USER_NAME")
+smtp_password = os.getenv("SMTP_PASSWORD")
 
 msg = MIMEText("Marisa")
 msg['Subject'] = "Test Email"
