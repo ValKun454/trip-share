@@ -306,7 +306,15 @@ async def add_friend(
     db.commit()
     db.refresh(new_friendship)
 
-    return new_friendship
+    # Convert to dict and add friend username
+    response_data = {
+        "id": new_friendship.id,
+        "user_id_1": new_friendship.user_id_1,
+        "user_id_2": new_friendship.user_id_2,
+        "friend_username": friend_user.username
+    }
+
+    return response_data
 
 @prefix_router.delete("/friends/{friend_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def remove_friend(
