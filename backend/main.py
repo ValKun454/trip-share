@@ -569,6 +569,8 @@ def create_trip(
     new_trip = TripModel(
         name=data.name,
         description=data.description,
+        beginning_date=data.beginning_date,
+        end_date=data.end_date,
         creator_id=current_user.id
     )
 
