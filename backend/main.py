@@ -260,12 +260,13 @@ async def get_friends_list(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Get list of friends for the current user
-    Returns only user id and username for each friend
+    Get list of accepted friends for the current user
+    Returns only user id and username for each accepted friend
     """
-    # Get all friendships involving the current user
+    # Get all accepted friendships involving the current user
     friendships = db.query(Friend).filter(
-        (Friend.user_id_1 == current_user.id) | (Friend.user_id_2 == current_user.id)
+        ((Friend.user_id_1 == current_user.id) | (Friend.user_id_2 == current_user.id)),
+        Friend.is_accepted == True
     ).all()
 
     # Extract friend user IDs
@@ -289,9 +290,9 @@ async def add_friend(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Add a friend for the current user
-    Creates a friendship between current user and the specified friend_id
-    Ensures user_id_1 is always less than user_id_2 (database constraint)
+    Send a friend request to another user
+    Creates a pending friendship (is_accepted=False) between current user and the specified friend_id
+    Current user is always user_id_1, friend is user_id_2 (after ordering constraint)
     """
     # Verify friend exists
     friend_user = db.query(User).filter(User.id == data.friend_id).first()
@@ -312,22 +313,30 @@ async def add_friend(
     user_id_1 = min(current_user.id, data.friend_id)
     user_id_2 = max(current_user.id, data.friend_id)
 
-    # Check if friendship already exists
+    # Check if friendship or friend request already exists
     existing_friendship = db.query(Friend).filter(
         Friend.user_id_1 == user_id_1,
         Friend.user_id_2 == user_id_2
     ).first()
 
     if existing_friendship:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Friendship already exists"
-        )
+        if existing_friendship.is_accepted:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Friendship already exists"
+            )
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Friend request already sent"
+            )
 
-    # Create the friendship
+    # Create the pending friend request
     new_friendship = Friend(
         user_id_1=user_id_1,
-        user_id_2=user_id_2
+        user_id_2=user_id_2,
+        is_accepted=False,
+        initiator_id=current_user.id
     )
 
     db.add(new_friendship)
@@ -339,10 +348,104 @@ async def add_friend(
         "id": new_friendship.id,
         "user_id_1": new_friendship.user_id_1,
         "user_id_2": new_friendship.user_id_2,
+        "is_accepted": new_friendship.is_accepted,
         "friend_username": friend_user.username
     }
 
     return response_data
+
+@prefix_router.put("/friends/{friendship_id}/accept", response_model=FriendResponse)
+async def accept_friend_request(
+    friendship_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Accept a friend request
+    Only the recipient of the friend request (not the initiator) can accept it
+    Sets is_accepted to True
+    """
+    # Get the friendship
+    friendship = db.query(Friend).filter(Friend.id == friendship_id).first()
+
+    if not friendship:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Friend request not found"
+        )
+
+    # Check if current user is part of this friendship
+    if current_user.id != friendship.user_id_1 and current_user.id != friendship.user_id_2:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not part of this friend request"
+        )
+
+    # Check if current user is the initiator (they cannot accept their own request)
+    if current_user.id == friendship.initiator_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You cannot accept your own friend request"
+        )
+
+    # Check if already accepted
+    if friendship.is_accepted:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Friend request already accepted"
+        )
+
+    # Accept the friend request
+    friendship.is_accepted = True
+    db.commit()
+    db.refresh(friendship)
+
+    # Get the other user's info
+    other_user_id = friendship.user_id_2 if current_user.id == friendship.user_id_1 else friendship.user_id_1
+    other_user = db.query(User).filter(User.id == other_user_id).first()
+
+    # Return response with friend username
+    response_data = {
+        "id": friendship.id,
+        "user_id_1": friendship.user_id_1,
+        "user_id_2": friendship.user_id_2,
+        "is_accepted": friendship.is_accepted,
+        "friend_username": other_user.username if other_user else None
+    }
+
+    return response_data
+
+@prefix_router.get("/friends/requests", response_model=list[FriendResponse])
+async def get_friend_requests(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get all pending friend requests for the current user
+    Returns friend requests where current user is the recipient (not accepted yet)
+    """
+    # Get all pending friend requests where current user is involved
+    pending_requests = db.query(Friend).filter(
+        ((Friend.user_id_1 == current_user.id) | (Friend.user_id_2 == current_user.id)),
+        Friend.is_accepted == False
+    ).all()
+
+    # Build response with friend usernames
+    response_list = []
+    for request in pending_requests:
+        # Get the other user (the one who sent the request)
+        other_user_id = request.user_id_2 if current_user.id == request.user_id_1 else request.user_id_1
+        other_user = db.query(User).filter(User.id == other_user_id).first()
+
+        response_list.append({
+            "id": request.id,
+            "user_id_1": request.user_id_1,
+            "user_id_2": request.user_id_2,
+            "is_accepted": request.is_accepted,
+            "friend_username": other_user.username if other_user else None
+        })
+
+    return response_list
 
 @prefix_router.delete("/friends/{friend_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def remove_friend(

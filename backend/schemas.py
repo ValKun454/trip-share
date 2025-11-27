@@ -137,6 +137,7 @@ class FriendResponse(BaseModel):
     id: int
     user_id_1: int = Field(alias="userId1")
     user_id_2: int = Field(alias="userId2")
+    is_accepted: bool = Field(alias="isAccepted")
     friend_username: str | None = Field(default=None, alias="friendUsername")
 
 class FriendCreate(BaseModel):

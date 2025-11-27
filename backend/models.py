@@ -83,11 +83,13 @@ class Position(Base):
 
 class Friend(Base):
     __tablename__ = 'friends'
-    
+
     id = Column(Integer, primary_key=True)
     user_id_1 = Column(Integer, ForeignKey('users.id'), nullable=False)
     user_id_2 = Column(Integer, ForeignKey('users.id'), nullable=False)
-    
+    is_accepted = Column(Boolean, default=False, nullable=False)
+    initiator_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+
     __table_args__ = (
         UniqueConstraint('user_id_1', 'user_id_2', name='unique_friendship'),
         # Ensure user_id_1 is always less than user_id_2
