@@ -84,7 +84,7 @@ class Expense(BaseModel):
     trip_id: int = Field(alias="tripId")
     payer_id: int = Field(alias="payerId")
     is_even_division: bool = Field(alias="isEvenDivision")
-    total_cost: Decimal
+    total_cost: Decimal = Field(alias="totalCost")
     positions: list[int]
 
 class ExpenseCreate(BaseModel):
@@ -93,7 +93,7 @@ class ExpenseCreate(BaseModel):
     description: str = Field(max_length=500)
     payer_id: int = Field(alias="payerId")
     is_even_division: bool = Field(alias="isEvenDivision")
-    total_cost: Decimal
+    total_cost: Decimal = Field(alias="totalCost")
 
 class ExpenseCreateResponse(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
@@ -106,7 +106,7 @@ class ExpenseCreateResponse(BaseModel):
     trip_id: int = Field(alias="tripId")
     payer_id: int = Field(alias="payerId")
     is_even_division: bool = Field(alias="isEvenDivision")
-    total_cost: Decimal
+    total_cost: Decimal = Field(alias="totalCost")
     positions: list[int]
 
 class ExpenseUpdate(BaseModel):
@@ -115,7 +115,7 @@ class ExpenseUpdate(BaseModel):
     description: str | None = Field(default=None, max_length=500)
     payer_id: int | None = Field(default=None, alias="payerId")
     is_even_division: bool | None = Field(default=None, alias="isEvenDivision")
-    total_cost: Decimal | None = None
+    total_cost: Decimal | None = Field(default=None, alias="totalCost")
 
 class Position(BaseModel):
     model_config = ConfigDict(populate_by_name=True, from_attributes=True)

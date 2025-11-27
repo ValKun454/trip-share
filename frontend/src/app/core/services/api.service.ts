@@ -134,17 +134,17 @@ export class ApiService {
     return this.http.get<Expense[]>(`${this.base}/trips/${tripId}/expenses`, this.getAuthHeaders());
   }
   /**
-   * Create expense - send snake_case field names expected by backend
-   * Backend schema ExpenseCreate: { is_scanned, name, description, payer_id, is_even_division, total_cost }
+   * Create expense - ALL fields now use camelCase Pydantic aliases
+   * Backend ExpenseCreate schema: { isScanned, name, description, payerId, isEvenDivision, totalCost }
    */
   createExpense(tripId: number, exp: ExpenseCreate): Observable<Expense> {
     const payload = {
-      is_scanned: exp.isScanned,
+      isScanned: exp.isScanned,
       name: exp.name,
       description: exp.description || '',
-      payer_id: exp.payerId,
-      is_even_division: exp.isEvenDivision,
-      total_cost: exp.totalCost
+      payerId: exp.payerId,
+      isEvenDivision: exp.isEvenDivision,
+      totalCost: exp.totalCost  // NOW has alias in backend!
     };
     return this.http.post<Expense>(`${this.base}/trips/${tripId}/expenses`, payload, this.getAuthHeaders());
   }
