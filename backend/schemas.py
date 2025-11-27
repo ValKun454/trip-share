@@ -2,7 +2,7 @@ from pydantic import BaseModel, EmailStr, Field, ConfigDict
 from datetime import datetime, date
 from decimal import Decimal
 
-# User schemas
+# User schemas 
 class UserRegister(BaseModel):
     email: EmailStr
     username: str = Field(..., min_length=3, max_length=40)
@@ -72,6 +72,7 @@ class TripUpdate(BaseModel):
     end_date: date | None = Field(default=None, alias="endDate")
     participants: list[int] | None = None
 
+# Expense schemas
 
 class Expense(BaseModel):
     model_config = ConfigDict(populate_by_name=True, from_attributes=True)
