@@ -40,6 +40,8 @@ class Trip(BaseModel):
     id: int
     name: str = Field(max_length=100)
     description: str | None = Field(default=None, max_length=500)
+    beginning_date: date | None = Field(default=None, alias="beginningDate")
+    end_date: date | None = Field(default=None, alias="endDate")
     created_at: datetime = Field(alias="createdAt")
     creator_id: int = Field(alias="creatorId")
     participants: list[int]
@@ -47,6 +49,8 @@ class Trip(BaseModel):
 class TripCreate(BaseModel):
     name: str = Field(max_length=100)
     description: str = Field(max_length=500)
+    beginning_date: date | None = Field(default=None, alias="beginningDate")
+    end_date: date | None = Field(default=None, alias="endDate")
     participants: list[int]
 
 class TripCreateResponse(BaseModel):
@@ -55,6 +59,8 @@ class TripCreateResponse(BaseModel):
     id: int
     name: str = Field(max_length=100)
     description: str | None = Field(default=None, max_length=500)
+    beginning_date: date | None = Field(default=None, alias="beginningDate")
+    end_date: date | None = Field(default=None, alias="endDate")
     created_at: datetime = Field(alias="createdAt")
     creator_id: int = Field(alias="creatorId")
     participants: list[int]
@@ -74,8 +80,6 @@ class Expense(BaseModel):
     is_scanned: bool = Field(alias="isScanned")
     name: str = Field(max_length=100)
     description: str = Field(max_length=500)
-    beginning_date: date = Field(alias="beginningDate")
-    end_date: date = Field(alias="endDate")
     created_at: datetime = Field(alias="createdAt")
     trip_id: int = Field(alias="tripId")
     payer_id: int = Field(alias="payerId")
@@ -87,8 +91,6 @@ class ExpenseCreate(BaseModel):
     is_scanned: bool = Field(alias="isScanned")
     name: str = Field(max_length=100)
     description: str = Field(max_length=500)
-    beginning_date: date = Field(alias="beginningDate")
-    end_date: date = Field(alias="endDate")
     payer_id: int = Field(alias="payerId")
     is_even_division: bool = Field(alias="isEvenDivision")
     total_cost: Decimal
@@ -100,8 +102,6 @@ class ExpenseCreateResponse(BaseModel):
     is_scanned: bool = Field(alias="isScanned")
     name: str = Field(max_length=100)
     description: str = Field(max_length=500)
-    beginning_date: date = Field(alias="beginningDate")
-    end_date: date = Field(alias="endDate")
     created_at: datetime = Field(alias="createdAt")
     trip_id: int = Field(alias="tripId")
     payer_id: int = Field(alias="payerId")
@@ -113,8 +113,6 @@ class ExpenseUpdate(BaseModel):
     is_scanned: bool | None = Field(default=None, alias="isScanned")
     name: str | None = Field(default=None, max_length=100)
     description: str | None = Field(default=None, max_length=500)
-    beginning_date: date | None = Field(default=None, alias="beginningDate")
-    end_date: date | None = Field(default=None, alias="endDate")
     payer_id: int | None = Field(default=None, alias="payerId")
     is_even_division: bool | None = Field(default=None, alias="isEvenDivision")
     total_cost: Decimal | None = None
