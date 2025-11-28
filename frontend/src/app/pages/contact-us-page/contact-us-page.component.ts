@@ -29,22 +29,22 @@ export class ContactUsPageComponent {
 
   // Contact Information
   contactInfo = {
-    phone: "+1 (555) 123-4567",
+    phone: "+48 777 777 777",
     email: "info@tripshare.com",
-    address: "123 Travel Street, Adventure City, AC 12345"
+    address: "Wydział Fizyki i Astronomii UAM, ul. Uniwersytetu Poznańskiego 2, 61-614 Poznań"
   };
 
-  // Head of Contact Information
+  // Head of Contact Information (карточку мы убрали из шаблона, но объект оставляем — не мешает)
   headOfContact = {
     name: "Sarah Johnson",
     title: "Director of Customer Relations",
     phone: "+1 (555) 123-4568",
     email: "sarah.johnson@tripshare.com",
-    photo: "assets/images/sarah-johnson.jpg", // You can add actual image path
+    photo: "assets/images/sarah-johnson.jpg",
     bio: "Sarah has over 10 years of experience in travel industry and customer service. She's passionate about helping travelers create unforgettable experiences."
   };
 
-  // Office location for map
+  // Office location for map (в шаблоне сейчас не используется)
   officeLocation = {
     lat: 40.7589,
     lng: -73.9851,
@@ -66,14 +66,13 @@ export class ContactUsPageComponent {
 
   onSubmit() {
     if (this.contactForm.valid) {
-      // Here you would typically send the form data to your backend
       console.log('Contact form submitted:', this.contactForm.value);
-      
+
       this.snackBar.open('Thank you for your message! We\'ll get back to you soon.', 'Close', {
         duration: 5000,
         panelClass: ['success-snackbar']
       });
-      
+
       this.contactForm.reset();
     } else {
       this.markFormGroupTouched();

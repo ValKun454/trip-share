@@ -30,7 +30,7 @@
 /* Main Content Layout */
 .content-container {
   display: grid;
-  grid-template-columns: 1fr 400px;
+  grid-template-columns: 1fr;
   gap: 40px;
   margin-bottom: 40px;
 }
@@ -111,6 +111,8 @@
   display: flex;
   flex-direction: column;
   gap: 20px;
+  max-width: 720px;
+  margin: 0 auto;
 }
 
 .info-section mat-card {
@@ -140,7 +142,7 @@
 
 .bio {
   margin-bottom: 16px;
-  color: #666;
+  color: var(--muted);
   line-height: 1.6;
 }
 
@@ -154,7 +156,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  color: var(--text-primary, #333);
+  color: var(--text);
 }
 
 .contact-item mat-icon {
@@ -209,11 +211,11 @@
 
 .day {
   font-weight: 500;
-  color: var(--text-primary, #333);
+  color: var(--text);
 }
 
 .time {
-  color: var(--text-secondary, #666);
+  color: var(--muted);
 }
 
 /* Map Card */
@@ -230,7 +232,7 @@
 }
 
 .map-info {
-  color: var(--text-secondary, #666);
+  color: var(--muted);
   font-size: 0.9rem;
 }
 
@@ -263,14 +265,14 @@
 }
 
 .faq-item h3 {
-  color: var(--text-primary, #333);
+  color: var(--text);
   margin-bottom: 8px;
   font-size: 1.1rem;
   font-weight: 500;
 }
 
 .faq-item p {
-  color: var(--text-secondary, #666);
+  color: var(--muted);
   line-height: 1.6;
   margin: 0;
 }
