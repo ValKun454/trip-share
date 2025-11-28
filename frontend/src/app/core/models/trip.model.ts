@@ -18,5 +18,5 @@ export interface GetTrip {
 export interface CreateTrip {
   name: string;
   description?: string;
-  participants?: number[]; // User IDs
+  participants?: number[]; // User ID
 }
