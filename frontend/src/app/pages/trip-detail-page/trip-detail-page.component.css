@@ -125,6 +125,13 @@
   margin-bottom: 16px;
 }
 
+/* ERROR MESSAGES INSIDE ADD EXPENSE FORM */
+.add-expense mat-error {
+  margin-left: -15px;
+  padding-left: 0;
+  color: #ef4444;
+}
+
 .checkbox-row {
   display: flex;
   gap: 24px;

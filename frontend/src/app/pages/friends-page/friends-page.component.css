@@ -81,6 +81,13 @@ input[type="text"][inputmode="numeric"] {
   margin-top: 12px;
 }
 
+/* ERROR MESSAGES INSIDE ADD FRIEND FORM */
+.add-friend-card mat-error {
+  margin-left: -15px;
+  padding-left: 0;
+  color: #ef4444;
+}
+
 /* Messages */
 .success-message,
 .error-message {
