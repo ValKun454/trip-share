@@ -19,6 +19,8 @@ interface Friend {
   username?: string;
   email?: string;
   created_at?: string;
+  isAccepted?: boolean;
+  friendUsername?: string;
 }
 
 interface CurrentUser {
@@ -62,6 +64,7 @@ export class FriendsPageComponent implements OnInit {
   private fb = inject(FormBuilder);
 
   friends: Friend[] = [];
+  friendRequests: Friend[] = [];
   loading = false;
   error: string | null = null;
   successMessage: string | null = null;
@@ -81,6 +84,7 @@ export class FriendsPageComponent implements OnInit {
       next: (user) => {
         this.currentUser = user;
         this.loadFriends();
+        this.loadFriendRequests();
       },
       error: (e) => {
         console.error('Failed to get current user', e);
@@ -95,13 +99,25 @@ export class FriendsPageComponent implements OnInit {
     
     this.api.getFriends().subscribe({
       next: (friends) => {
-        this.friends = friends;
+        // only accepted friendships
+        this.friends = (friends || []).filter((f: any) => f.isAccepted);
         this.loading = false;
       },
       error: (e) => {
         console.error('Failed to load friends', e);
         this.error = 'Failed to load friends';
         this.loading = false;
+      }
+    });
+  }
+
+  loadFriendRequests(): void {
+    this.api.getFriendRequests().subscribe({
+      next: (requests) => {
+        this.friendRequests = requests || [];
+      },
+      error: (e) => {
+        console.error('Failed to load friend requests', e);
       }
     });
   }
@@ -125,11 +141,12 @@ export class FriendsPageComponent implements OnInit {
     }
 
     this.api.addFriend(friendId).subscribe({
-      next: (newFriend) => {
-        this.friends.push(newFriend);
-        this.successMessage = `Friend with ID ${friendId} added successfully!`;
+      next: () => {
+        // do not add to friends immediately, it's just a request
+        this.successMessage = `Friend request sent to user ${friendId}`;
         this.error = null;
         this.addFriendForm.reset();
+        this.loadFriendRequests();
 
         // Clear success message after 3 seconds
         setTimeout(() => {
@@ -157,6 +174,62 @@ export class FriendsPageComponent implements OnInit {
           errorMsg = e.message;
         }
         this.error = errorMsg;
+        this.successMessage = null;
+      }
+    });
+  }
+
+  acceptFriendRequest(request: Friend): void {
+    if (!request.id) {
+      this.error = 'Error: Missing request id';
+      return;
+    }
+
+    this.api.acceptFriendRequest(request.id).subscribe({
+      next: () => {
+        this.successMessage = 'Friend request accepted';
+        this.error = null;
+        this.loadFriends();
+        this.loadFriendRequests();
+        setTimeout(() => {
+          this.successMessage = null;
+        }, 3000);
+      },
+      error: (e) => {
+        console.error('Failed to accept friend request', e);
+        let msg = e?.error?.detail || 'Failed to accept friend request';
+        if (typeof msg === 'string' && msg.includes('own friend request')) {
+          msg = 'This is your outgoing request. The other user has to accept it.';
+        }
+        this.error = msg;
+        this.successMessage = null;
+      }
+    });
+  }
+
+  declineFriendRequest(request: Friend): void {
+    const friendId = this.getOtherFriendId(request);
+    if (friendId === 0) {
+      this.error = 'Error: Could not determine friend ID';
+      return;
+    }
+
+    if (!confirm('Decline this friend request?')) {
+      return;
+    }
+
+    this.api.removeFriend(friendId).subscribe({
+      next: () => {
+        this.friendRequests = this.friendRequests.filter(r => r.id !== request.id);
+        this.successMessage = 'Friend request declined';
+        this.error = null;
+        setTimeout(() => {
+          this.successMessage = null;
+        }, 2000);
+      },
+      error: (e) => {
+        console.error('Failed to decline friend request', e);
+        this.error = e?.error?.detail || 'Failed to decline friend request';
         this.successMessage = null;
       }
     });
@@ -237,4 +310,3 @@ export class FriendsPageComponent implements OnInit {
     return userId1 || 0;
   }
 }
-

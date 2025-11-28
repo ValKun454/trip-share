@@ -1,7 +1,7 @@
 <mat-toolbar color="primary" class="toolbar">
   <span class="title">Friends</span>
   <span class="spacer"></span>
-  <button mat-icon-button aria-label="refresh" (click)="loadFriends()">
+  <button mat-icon-button aria-label="refresh" (click)="loadFriends(); loadFriendRequests()">
     <mat-icon>refresh</mat-icon>
   </button>
 </mat-toolbar>
@@ -47,6 +47,30 @@
     </mat-card-content>
   </mat-card>
 
+  <!-- Friend Requests -->
+  <div *ngIf="friendRequests.length > 0" class="friends-section">
+    <h2 class="section-title">Friend Requests ({{ friendRequests.length }})</h2>
+    <div class="friends-grid">
+      <mat-card *ngFor="let request of friendRequests" class="friend-card">
+        <mat-card-header>
+          <div mat-card-avatar class="friend-avatar">
+            {{ getInitials(request.friendUsername || request.username) }}
+          </div>
+          <mat-card-title>{{ request.friendUsername || request.username || 'Friend' }}</mat-card-title>
+          <mat-card-subtitle>User ID: {{ getOtherFriendId(request) }}</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-actions align="end">
+          <button mat-stroked-button color="primary" (click)="acceptFriendRequest(request)">
+            Accept
+          </button>
+          <button mat-stroked-button color="warn" (click)="declineFriendRequest(request)">
+            Decline
+          </button>
+        </mat-card-actions>
+      </mat-card>
+    </div>
+  </div>
+
   <!-- Loading State -->
   <div *ngIf="loading" class="loading">
     <mat-progress-spinner mode="indeterminate"></mat-progress-spinner>
@@ -58,9 +82,13 @@
     <div class="friends-grid">
       <mat-card *ngFor="let friend of friends" class="friend-card">
         <mat-card-header>
-          <div mat-card-avatar class="friend-avatar">{{ getInitials(friend.username) }}</div>
-          <mat-card-title>{{ friend.username || 'Friend' }}</mat-card-title>
-          <mat-card-subtitle>ID: {{ friend.userId1 || friend.userId2 || friend.user_id_1 || friend.user_id_2 }}</mat-card-subtitle>
+          <div mat-card-avatar class="friend-avatar">
+            {{ getInitials(friend.friendUsername || friend.username) }}
+          </div>
+          <mat-card-title>{{ friend.friendUsername || friend.username || 'Friend' }}</mat-card-title>
+          <mat-card-subtitle>
+            ID: {{ getOtherFriendId(friend) }}
+          </mat-card-subtitle>
         </mat-card-header>
         <mat-card-content>
           <div class="friend-email" *ngIf="friend.email">
@@ -82,7 +110,7 @@
   </div>
 
   <!-- Empty State -->
-  <div *ngIf="!loading && friends.length === 0" class="empty-state">
+  <div *ngIf="!loading && friends.length === 0 && friendRequests.length === 0" class="empty-state">
     <mat-icon class="empty-icon">people_outline</mat-icon>
     <h3>No friends yet</h3>
     <p>Start by adding your first friend using their User ID above</p>

@@ -108,14 +108,21 @@ export class ApiService {
 
   // Friends endpoints
   /**
-   * Get all friends for current user
+   * Get all friends for current user (accepted + pending)
    */
   getFriends(): Observable<any[]> {
     return this.http.get<any[]>(`${this.base}/friends`, this.getAuthHeaders());
   }
 
   /**
-   * Add a friend by user ID
+   * Get pending friend requests for current user
+   */
+  getFriendRequests(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.base}/friends/requests`, this.getAuthHeaders());
+  }
+
+  /**
+   * Add a friend by user ID (send friend invite)
    */
   addFriend(friendId: number): Observable<any> {
     const payload = { friendId: friendId };
@@ -123,7 +130,14 @@ export class ApiService {
   }
 
   /**
-   * Remove a friend by user ID
+   * Accept friend request by friendship row ID
+   */
+  acceptFriendRequest(friendshipId: number): Observable<any> {
+    return this.http.put<any>(`${this.base}/friends/${friendshipId}/accept`, {}, this.getAuthHeaders());
+  }
+
+  /**
+   * Remove a friend / cancel friendship by user ID
    */
   removeFriend(friendId: number): Observable<void> {
     return this.http.delete<void>(`${this.base}/friends/${friendId}`, this.getAuthHeaders());
