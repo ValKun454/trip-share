@@ -248,11 +248,26 @@ async def get_friends(
     Returns friendship records where current user is either user_id_1 or user_id_2
     """
     # Get all friendships involving the current user
-    friends = db.query(Friend).filter(
+    friendships = db.query(Friend).filter(
         (Friend.user_id_1 == current_user.id) | (Friend.user_id_2 == current_user.id)
     ).all()
 
-    return friends
+    # Build response with friend usernames
+    response_list = []
+    for friendship in friendships:
+        # Get the other user (the friend)
+        other_user_id = friendship.user_id_2 if current_user.id == friendship.user_id_1 else friendship.user_id_1
+        other_user = db.query(User).filter(User.id == other_user_id).first()
+
+        response_list.append({
+            "id": friendship.id,
+            "user_id_1": friendship.user_id_1,
+            "user_id_2": friendship.user_id_2,
+            "is_accepted": friendship.is_accepted,
+            "friend_username": other_user.username if other_user else None
+        })
+
+    return response_list
 
 @prefix_router.get("/friends/list", response_model=list[FriendUser])
 async def get_friends_list(
@@ -421,13 +436,14 @@ async def get_friend_requests(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Get all pending friend requests for the current user
-    Returns friend requests where current user is the recipient (not accepted yet)
+    Get all incoming pending friend requests for the current user
+    Returns friend requests where current user is the recipient (not the initiator)
     """
-    # Get all pending friend requests where current user is involved
+    # Get all pending friend requests where current user is the recipient (not the initiator)
     pending_requests = db.query(Friend).filter(
         ((Friend.user_id_1 == current_user.id) | (Friend.user_id_2 == current_user.id)),
-        Friend.is_accepted == False
+        Friend.is_accepted == False,
+        Friend.initiator_id != current_user.id
     ).all()
 
     # Build response with friend usernames
