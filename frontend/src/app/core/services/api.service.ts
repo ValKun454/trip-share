@@ -1,9 +1,11 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { GetTrip, CreateTrip } from '../models/trip.model'
 import { Expense, ExpenseCreate } from '../models/expense.model'
 import { DebtsSummary } from '../models/debts.model';
+import { Router } from '@angular/router';
 
 // dannye parni derzjite krepko ne poteryaite
 
@@ -13,7 +15,7 @@ export class ApiService {
   // chatgpt skazal eto baza
   private base = 'http://localhost:8000/api';
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private router: Router) {}
 
   private getAuthHeaders() {
     const token = localStorage.getItem('authToken');
@@ -24,13 +26,27 @@ export class ApiService {
     return { headers };
   }
 
+  private handleAuthError<T>(obs: Observable<T>): Observable<T> {
+    return obs.pipe(
+      catchError((error: any) => {
+        if (error && error.status === 401) {
+          localStorage.removeItem('authToken');
+          this.router.navigate(['/login']);
+        }
+        return throwError(() => error);
+      })
+    );
+  }
+
   // Authentication
   login(email: string, password: string): Observable<any> {
     return this.http.post(`${this.base}/login`, { email, password });
   }
 
   getMe(): Observable<any> {
-    return this.http.get(`${this.base}/me`, this.getAuthHeaders());
+    return this.handleAuthError(
+      this.http.get(`${this.base}/me`, this.getAuthHeaders())
+    );
   }
 
   /**
@@ -44,7 +60,9 @@ export class ApiService {
     if (data.email !== undefined) payload.email = data.email;
     if (data.password !== undefined) payload.password = data.password;
     
-    return this.http.put(`${this.base}/me`, payload, this.getAuthHeaders());
+    return this.handleAuthError(
+      this.http.put(`${this.base}/me`, payload, this.getAuthHeaders())
+    );
   }
 
   // register user, backend expects { email, username, password }
@@ -64,10 +82,14 @@ export class ApiService {
 
   // poezdki
   getTrips(): Observable<GetTrip[]> {
-    return this.http.get<GetTrip[]>(`${this.base}/trips`, this.getAuthHeaders());
+    return this.handleAuthError(
+      this.http.get<GetTrip[]>(`${this.base}/trips`, this.getAuthHeaders())
+    );
   }
   getTrip(id: number): Observable<GetTrip> {
-    return this.http.get<GetTrip>(`${this.base}/trips/${id}`, this.getAuthHeaders());
+    return this.handleAuthError(
+      this.http.get<GetTrip>(`${this.base}/trips/${id}`, this.getAuthHeaders())
+    );
   }
   /**
    * Create trip - send snake_case field names expected by backend
@@ -79,7 +101,9 @@ export class ApiService {
       description: dto.description || '',
       participants: dto.participants || []
     };
-    return this.http.post<any>(`${this.base}/trips`, payload, this.getAuthHeaders());
+    return this.handleAuthError(
+      this.http.post<any>(`${this.base}/trips`, payload, this.getAuthHeaders())
+    );
   }
 
   /**
@@ -96,14 +120,18 @@ export class ApiService {
     };
     // Remove undefined values
     Object.keys(payload).forEach(key => payload[key] === undefined && delete payload[key]);
-    return this.http.put<GetTrip>(`${this.base}/trips/${tripId}`, payload, this.getAuthHeaders());
+    return this.handleAuthError(
+      this.http.put<GetTrip>(`${this.base}/trips/${tripId}`, payload, this.getAuthHeaders())
+    );
   }
 
   /**
    * Delete trip
    */
   deleteTrip(tripId: number): Observable<void> {
-    return this.http.delete<void>(`${this.base}/trips/${tripId}`, this.getAuthHeaders());
+    return this.handleAuthError(
+      this.http.delete<void>(`${this.base}/trips/${tripId}`, this.getAuthHeaders())
+    );
   }
 
   // Friends endpoints
@@ -111,14 +139,18 @@ export class ApiService {
    * Get all friends for current user (accepted + pending)
    */
   getFriends(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.base}/friends`, this.getAuthHeaders());
+    return this.handleAuthError(
+      this.http.get<any[]>(`${this.base}/friends`, this.getAuthHeaders())
+    );
   }
 
   /**
    * Get pending friend requests for current user
    */
   getFriendRequests(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.base}/friends/requests`, this.getAuthHeaders());
+    return this.handleAuthError(
+      this.http.get<any[]>(`${this.base}/friends/requests`, this.getAuthHeaders())
+    );
   }
 
   /**
@@ -126,26 +158,34 @@ export class ApiService {
    */
   addFriend(friendId: number): Observable<any> {
     const payload = { friendId: friendId };
-    return this.http.post<any>(`${this.base}/friends`, payload, this.getAuthHeaders());
+    return this.handleAuthError(
+      this.http.post<any>(`${this.base}/friends`, payload, this.getAuthHeaders())
+    );
   }
 
   /**
    * Accept friend request by friendship row ID
    */
   acceptFriendRequest(friendshipId: number): Observable<any> {
-    return this.http.put<any>(`${this.base}/friends/${friendshipId}/accept`, {}, this.getAuthHeaders());
+    return this.handleAuthError(
+      this.http.put<any>(`${this.base}/friends/${friendshipId}/accept`, {}, this.getAuthHeaders())
+    );
   }
 
   /**
    * Remove a friend / cancel friendship by user ID
    */
   removeFriend(friendId: number): Observable<void> {
-    return this.http.delete<void>(`${this.base}/friends/${friendId}`, this.getAuthHeaders());
+    return this.handleAuthError(
+      this.http.delete<void>(`${this.base}/friends/${friendId}`, this.getAuthHeaders())
+    );
   }
 
   // traty
   getExpenses(tripId: number): Observable<Expense[]> {
-    return this.http.get<Expense[]>(`${this.base}/trips/${tripId}/expenses`, this.getAuthHeaders());
+    return this.handleAuthError(
+      this.http.get<Expense[]>(`${this.base}/trips/${tripId}/expenses`, this.getAuthHeaders())
+    );
   }
   /**
    * Create expense - ALL fields now use camelCase Pydantic aliases
@@ -160,16 +200,22 @@ export class ApiService {
       isEvenDivision: exp.isEvenDivision,
       totalCost: exp.totalCost  // NOW has alias in backend!
     };
-    return this.http.post<Expense>(`${this.base}/trips/${tripId}/expenses`, payload, this.getAuthHeaders());
+    return this.handleAuthError(
+      this.http.post<Expense>(`${this.base}/trips/${tripId}/expenses`, payload, this.getAuthHeaders())
+    );
   }
 
   // identyfikujemy usera po UID
   getDebtsSummaryByUid(uid: string): Observable<DebtsSummary> {
-    return this.http.get<DebtsSummary>(`${this.base}/debts/summary?uid=${encodeURIComponent(uid)}`, this.getAuthHeaders());
+    return this.handleAuthError(
+      this.http.get<DebtsSummary>(`${this.base}/debts/summary?uid=${encodeURIComponent(uid)}`, this.getAuthHeaders())
+    );
   }
 
   // Trip summary endpoint (expected to return settlement / summary data for a trip)
   getTripSummary(tripId: string): Observable<any> {
-    return this.http.get<any>(`${this.base}/trips/${encodeURIComponent(tripId)}/summary`, this.getAuthHeaders());
+    return this.handleAuthError(
+      this.http.get<any>(`${this.base}/trips/${encodeURIComponent(tripId)}/summary`, this.getAuthHeaders())
+    );
   }
 }
