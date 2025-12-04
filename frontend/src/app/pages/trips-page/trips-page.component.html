@@ -59,6 +59,35 @@
         <mat-hint>Use user IDs or emails</mat-hint>
       </mat-form-field>
 
+      <div class="friends-row">
+        <button mat-stroked-button type="button" (click)="toggleFriendsPicker()">
+          <mat-icon>group_add</mat-icon>
+          Add friends
+        </button>
+        <span *ngIf="friends.length">Selected: {{ selectedFriendIds.length }}</span>
+      </div>
+
+      <div *ngIf="showFriendsPicker" class="friends-picker">
+        <div *ngIf="friendsLoading">Loading friends...</div>
+        <div *ngIf="friendsError" class="friends-error">{{ friendsError }}</div>
+        <div *ngIf="!friendsLoading && !friendsError && !friends.length" class="friends-empty">
+          You don't have any friends yet.
+        </div>
+        <div *ngIf="friends.length" class="friends-list">
+          <button
+            *ngFor="let f of friends"
+            type="button"
+            mat-stroked-button
+            class="friend-chip"
+            [class.friend-chip-selected]="selectedFriendIds.includes(f.id)"
+            (click)="toggleFriendSelection(f.id)">
+            <span class="friend-avatar">{{ f.label.charAt(0) }}</span>
+            <span class="friend-name">{{ f.label }}</span>
+            <mat-icon *ngIf="selectedFriendIds.includes(f.id)">check</mat-icon>
+          </button>
+        </div>
+      </div>
+
       <div class="actions">
         <button mat-stroked-button type="button" (click)="toggleCreate()">Cancel</button>
         <button mat-flat-button color="primary" type="submit" [disabled]="!form.get('name')?.valid">

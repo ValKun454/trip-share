@@ -9,12 +9,12 @@ import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
 import { MatToolbarModule } from "@angular/material/toolbar";
 import { MatFormFieldModule } from "@angular/material/form-field";
 import { MatDatepickerModule } from "@angular/material/datepicker";
-import { MatNativeDateModule } from "@angular/material/core";
-import { MAT_DATE_FORMATS, MAT_DATE_LOCALE, DateAdapter } from "@angular/material/core";
+import { MatNativeDateModule, MAT_DATE_FORMATS, MAT_DATE_LOCALE, DateAdapter } from "@angular/material/core";
 import { MatTooltipModule } from "@angular/material/tooltip";
 import { RouterModule } from "@angular/router";
 import { ApiService } from "../../core/services/api.service";
 import { GetTrip, CreateTrip } from "../../core/models/trip.model";
+import { AuthService } from "../../core/services/auth.service";
 
 /**
  * Date formats for English calendar, but still dd.MM.yyyy in the input
@@ -81,6 +81,13 @@ export class TripsPageComponent implements OnInit {
   showCreate = false;
   editingTripId: number | null = null;
 
+  // friends picker
+  friends: Array<{ id: number; label: string }> = [];
+  selectedFriendIds: number[] = [];
+  friendsLoading = false;
+  friendsError: string | null = null;
+  showFriendsPicker = false;
+
   form = inject(FormBuilder).group({
     name: ['', [Validators.required, Validators.minLength(2)]],
     description: ['', [Validators.maxLength(500)]],
@@ -90,14 +97,16 @@ export class TripsPageComponent implements OnInit {
   }, { validators: startBeforeEnd() });
 
   private api = inject(ApiService);
-  // Angular Material date adapter – we set locale to English
   private dateAdapter = inject<DateAdapter<Date>>(DateAdapter as any);
+  private auth = inject(AuthService);
+  currentUser = this.auth.getCurrentUser();
 
   ngOnInit(): void {
     // calendar language (month/day names) set to English
     this.dateAdapter.setLocale('en-GB');
 
     this.loadTrips();
+    this.loadFriends();
   }
 
   /**
@@ -175,11 +184,58 @@ export class TripsPageComponent implements OnInit {
     });
   }
 
+  loadFriends() {
+    this.friendsLoading = true;
+    this.friendsError = null;
+
+    this.api.getFriends().subscribe({
+      next: (list: any[]) => {
+        const meId = this.currentUser?.id;
+        const accepted = (list || []).filter(f => f.isAccepted);
+
+        this.friends = accepted.map(f => {
+          let friendId: number;
+          if (meId && f.userId1 === meId) {
+            friendId = f.userId2;
+          } else if (meId && f.userId2 === meId) {
+            friendId = f.userId1;
+          } else {
+            // fallback, если по какой-то причине не совпало
+            friendId = f.userId2;
+          }
+          const label = f.friendUsername || `User #${friendId}`;
+          return { id: friendId, label };
+        });
+
+        this.friendsLoading = false;
+      },
+      error: (e) => {
+        console.error('Failed to load friends', e);
+        this.friendsLoading = false;
+        this.friendsError = 'Failed to load friends';
+      }
+    });
+  }
+
+  toggleFriendsPicker() {
+    this.showFriendsPicker = !this.showFriendsPicker;
+  }
+
+  toggleFriendSelection(friendId: number) {
+    if (this.selectedFriendIds.includes(friendId)) {
+      this.selectedFriendIds = this.selectedFriendIds.filter(id => id !== friendId);
+    } else {
+      this.selectedFriendIds = [...this.selectedFriendIds, friendId];
+    }
+  }
+
   toggleCreate() {
     this.showCreate = !this.showCreate;
     if (!this.showCreate) {
       this.form.reset();
       this.editingTripId = null;
+      this.selectedFriendIds = [];
+      this.showFriendsPicker = false;
     }
   }
 
@@ -198,7 +254,7 @@ export class TripsPageComponent implements OnInit {
     const participantsRaw = (val.participants ?? '').toString().trim();
 
     // Parse participants as user IDs, comma-separated
-    const participants: number[] = participantsRaw
+    let participants: number[] = participantsRaw
       ? participantsRaw
           .split(',')
           .map((s: string) => {
@@ -207,6 +263,13 @@ export class TripsPageComponent implements OnInit {
           })
           .filter((num: number) => num > 0)
       : [];
+
+    // добавить выбранных друзей
+    if (this.selectedFriendIds.length) {
+      const set = new Set<number>(participants);
+      this.selectedFriendIds.forEach(id => set.add(id));
+      participants = Array.from(set);
+    }
 
     // dates from form -> "dd.MM.yyyy"
     const startLabel = this.toDDMMYYYY(val.startDate);
@@ -299,6 +362,9 @@ export class TripsPageComponent implements OnInit {
       description: trip.description || '',
       participants: trip.participants?.join(', ') || ''
     });
+    this.selectedFriendIds = trip.participants
+      ? trip.participants.filter(id => this.friends.some(f => f.id === id))
+      : [];
     this.showCreate = true;
     setTimeout(() => {
       document.querySelector('.create-panel')?.scrollIntoView({ behavior: 'smooth' });

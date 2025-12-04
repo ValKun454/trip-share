@@ -201,3 +201,54 @@
 ::ng-deep .mat-calendar-body-today:not(.mat-calendar-body-selected) {
   border-color: var(--primary) !important;
 }
+
+/* Friends picker */
+.friends-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.friends-picker {
+  margin-bottom: 16px;
+}
+
+.friends-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.friend-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+}
+
+.friend-chip-selected {
+  border-color: var(--primary);
+}
+
+.friend-avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+}
+
+.friend-name {
+  white-space: nowrap;
+}
+
+.friends-error,
+.friends-empty {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-top: 4px;
+}
