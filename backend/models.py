@@ -95,3 +95,22 @@ class Friend(Base):
         # Ensure user_id_1 is always less than user_id_2
         CheckConstraint('user_id_1 < user_id_2', name='check_user_order'),
     )
+
+class TripInvite(Base):
+    __tablename__ = 'trip_invites'
+
+    id = Column(Integer, primary_key=True)
+    trip_id = Column(Integer, ForeignKey('trips.id'), nullable=False)
+    invitee_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    inviter_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    status = Column(String(20), nullable=False, default='pending')
+    created_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
+
+    trip = relationship('Trip')
+    invitee = relationship('User', foreign_keys=[invitee_id])
+    inviter = relationship('User', foreign_keys=[inviter_id])
+
+    __table_args__ = (
+        UniqueConstraint('trip_id', 'invitee_id', name='unique_trip_invite'),
+        CheckConstraint("status IN ('pending', 'accepted', 'declined')", name='check_status'),
+    )

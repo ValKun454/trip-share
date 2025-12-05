@@ -8,7 +8,7 @@ import uvicorn
 from datetime import timedelta
 from schemas import *
 from auth import authenticate_user, create_access_token, get_current_user, get_db, ACCESS_TOKEN_EXPIRE_MINUTES, get_password_hash
-from models import User, Trip as TripModel, Participant, Expense as ExpenseModel, Position as PositionModel, Friend
+from models import User, Trip as TripModel, Participant, Expense as ExpenseModel, Position as PositionModel, Friend, TripInvite
 from email_utils import create_verification_token, verify_verification_token, send_verification_email
 
 
@@ -504,6 +504,242 @@ async def remove_friend(
     return None
 
 
+# Trip Invite endpoints
+@prefix_router.post("/trips/{trip_id}/invites", response_model=TripInviteResponse, status_code=status.HTTP_201_CREATED)
+async def invite_user_to_trip(
+    trip_id: int,
+    data: TripInviteCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Invite a user to a trip
+    Only the trip creator or participants can invite users
+    Can only invite users from the friend list (accepted friends)
+    """
+    # Verify the trip exists
+    trip = db.query(TripModel).filter(TripModel.id == trip_id).first()
+    if not trip:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Trip not found"
+        )
+
+    # Check if current user has access to this trip
+    is_creator = trip.creator_id == current_user.id
+    is_participant = db.query(Participant).filter(
+        Participant.trip_id == trip_id,
+        Participant.user_id == current_user.id
+    ).first() is not None
+
+    if not is_creator and not is_participant:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You don't have access to this trip"
+        )
+
+    # Verify invitee exists
+    invitee = db.query(User).filter(User.id == data.invitee_id).first()
+    if not invitee:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"User with id {data.invitee_id} not found"
+        )
+
+    # Check if invitee is a friend (accepted friendship)
+    user_id_1 = min(current_user.id, data.invitee_id)
+    user_id_2 = max(current_user.id, data.invitee_id)
+
+    friendship = db.query(Friend).filter(
+        Friend.user_id_1 == user_id_1,
+        Friend.user_id_2 == user_id_2,
+        Friend.is_accepted == True
+    ).first()
+
+    if not friendship:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Can only invite users from your friend list"
+        )
+
+    # Check if user is already a participant or creator
+    if trip.creator_id == data.invitee_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User is already the creator of this trip"
+        )
+
+    existing_participant = db.query(Participant).filter(
+        Participant.trip_id == trip_id,
+        Participant.user_id == data.invitee_id
+    ).first()
+
+    if existing_participant:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User is already a participant of this trip"
+        )
+
+    # Check if invite already exists
+    existing_invite = db.query(TripInvite).filter(
+        TripInvite.trip_id == trip_id,
+        TripInvite.invitee_id == data.invitee_id
+    ).first()
+
+    if existing_invite:
+        if existing_invite.status == 'pending':
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invite already sent to this user"
+            )
+        elif existing_invite.status == 'accepted':
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="User has already accepted an invite to this trip"
+            )
+        elif existing_invite.status == 'declined':
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="User has declined an invite to this trip"
+            )
+
+    # Create the invite
+    new_invite = TripInvite(
+        trip_id=trip_id,
+        invitee_id=data.invitee_id,
+        inviter_id=current_user.id,
+        status='pending'
+    )
+
+    db.add(new_invite)
+    db.commit()
+    db.refresh(new_invite)
+
+    # Build response with additional info
+    response_data = {
+        "id": new_invite.id,
+        "trip_id": new_invite.trip_id,
+        "invitee_id": new_invite.invitee_id,
+        "inviter_id": new_invite.inviter_id,
+        "status": new_invite.status,
+        "created_at": new_invite.created_at,
+        "trip_name": trip.name,
+        "invitee_username": invitee.username,
+        "inviter_username": current_user.username
+    }
+
+    return response_data
+
+@prefix_router.put("/trips/invites/{invite_id}", response_model=TripInviteResponse)
+async def respond_to_trip_invite(
+    invite_id: int,
+    data: TripInviteUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Accept or decline a trip invite
+    Only the invitee can respond to the invite
+    Status must be 'accepted' or 'declined'
+    """
+    # Validate status
+    if data.status not in ['accepted', 'declined']:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Status must be 'accepted' or 'declined'"
+        )
+
+    # Get the invite
+    invite = db.query(TripInvite).filter(TripInvite.id == invite_id).first()
+    if not invite:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Invite not found"
+        )
+
+    # Check if current user is the invitee
+    if invite.invitee_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only the invitee can respond to this invite"
+        )
+
+    # Check if invite is still pending
+    if invite.status != 'pending':
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invite has already been {invite.status}"
+        )
+
+    # Update the invite status
+    invite.status = data.status
+
+    # If accepted, add user as participant
+    if data.status == 'accepted':
+        new_participant = Participant(
+            user_id=current_user.id,
+            trip_id=invite.trip_id
+        )
+        db.add(new_participant)
+
+    db.commit()
+    db.refresh(invite)
+
+    # Get additional info for response
+    trip = db.query(TripModel).filter(TripModel.id == invite.trip_id).first()
+    invitee = db.query(User).filter(User.id == invite.invitee_id).first()
+    inviter = db.query(User).filter(User.id == invite.inviter_id).first()
+
+    response_data = {
+        "id": invite.id,
+        "trip_id": invite.trip_id,
+        "invitee_id": invite.invitee_id,
+        "inviter_id": invite.inviter_id,
+        "status": invite.status,
+        "created_at": invite.created_at,
+        "trip_name": trip.name if trip else None,
+        "invitee_username": invitee.username if invitee else None,
+        "inviter_username": inviter.username if inviter else None
+    }
+
+    return response_data
+
+@prefix_router.get("/trips/invites", response_model=list[TripInviteResponse])
+async def get_incoming_trip_invites(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get all incoming trip invites for the current user
+    Returns only pending invites where current user is the invitee
+    """
+    # Get all pending invites for the current user
+    invites = db.query(TripInvite).filter(
+        TripInvite.invitee_id == current_user.id,
+        TripInvite.status == 'pending'
+    ).all()
+
+    # Build response list with additional info
+    response_list = []
+    for invite in invites:
+        trip = db.query(TripModel).filter(TripModel.id == invite.trip_id).first()
+        inviter = db.query(User).filter(User.id == invite.inviter_id).first()
+
+        response_list.append({
+            "id": invite.id,
+            "trip_id": invite.trip_id,
+            "invitee_id": invite.invitee_id,
+            "inviter_id": invite.inviter_id,
+            "status": invite.status,
+            "created_at": invite.created_at,
+            "trip_name": trip.name if trip else None,
+            "invitee_username": current_user.username,
+            "inviter_username": inviter.username if inviter else None
+        })
+
+    return response_list
+
+
 # GET endpoint - retrieve data  ---- trip
 
 
@@ -884,10 +1120,6 @@ def update_expense(
         expense.name = data.name
     if data.description is not None:
         expense.description = data.description
-    if data.beginning_date is not None:
-        expense.beginning_date = data.beginning_date
-    if data.end_date is not None:
-        expense.end_date = data.end_date
     if data.is_even_division is not None:
         expense.is_even_division = data.is_even_division
     if data.total_cost is not None:

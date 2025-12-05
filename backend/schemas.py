@@ -148,3 +148,22 @@ class FriendUser(BaseModel):
 
     id: int
     username: str
+
+class TripInviteResponse(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, from_attributes=True)
+
+    id: int
+    trip_id: int = Field(alias="tripId")
+    invitee_id: int = Field(alias="inviteeId")
+    inviter_id: int = Field(alias="inviterId")
+    status: str
+    created_at: datetime = Field(alias="createdAt")
+    trip_name: str | None = Field(default=None, alias="tripName")
+    invitee_username: str | None = Field(default=None, alias="inviteeUsername")
+    inviter_username: str | None = Field(default=None, alias="inviterUsername")
+
+class TripInviteCreate(BaseModel):
+    invitee_id: int = Field(alias="inviteeId")
+
+class TripInviteUpdate(BaseModel):
+    status: str
