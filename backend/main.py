@@ -674,13 +674,20 @@ async def respond_to_trip_invite(
     # Update the invite status
     invite.status = data.status
 
-    # If accepted, add user as participant
+    # If accepted, add user as participant (if not already a participant)
     if data.status == 'accepted':
-        new_participant = Participant(
-            user_id=current_user.id,
-            trip_id=invite.trip_id
-        )
-        db.add(new_participant)
+        # Check if user is already a participant
+        existing_participant = db.query(Participant).filter(
+            Participant.trip_id == invite.trip_id,
+            Participant.user_id == current_user.id
+        ).first()
+
+        if not existing_participant:
+            new_participant = Participant(
+                user_id=current_user.id,
+                trip_id=invite.trip_id
+            )
+            db.add(new_participant)
 
     db.commit()
     db.refresh(invite)
