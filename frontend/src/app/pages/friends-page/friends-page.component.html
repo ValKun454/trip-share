@@ -1,7 +1,7 @@
 <mat-toolbar color="primary" class="toolbar">
   <span class="title">Friends</span>
   <span class="spacer"></span>
-  <button mat-icon-button aria-label="refresh" (click)="loadFriends(); loadFriendRequests()">
+  <button mat-icon-button aria-label="refresh" (click)="loadFriends(); loadFriendRequests(); loadTripInvites()">
     <mat-icon>refresh</mat-icon>
   </button>
 </mat-toolbar>
@@ -71,7 +71,33 @@
     </div>
   </div>
 
-  <!-- Loading State -->
+  <!-- Trip Invites (NOWA SEKCJA) -->
+  <div *ngIf="tripInvites.length > 0" class="friends-section">
+    <h2 class="section-title">Trip Invites ({{ tripInvites.length }})</h2>
+    <div class="friends-grid">
+      <mat-card *ngFor="let invite of tripInvites" class="friend-card">
+        <mat-card-header>
+          <div mat-card-avatar class="friend-avatar">
+            {{ (invite.tripName || 'TR').substring(0, 2).toUpperCase() }}
+          </div>
+          <mat-card-title>{{ invite.tripName || ('Trip #' + invite.tripId) }}</mat-card-title>
+          <mat-card-subtitle>
+            From: {{ invite.inviterUsername || ('User #' + invite.inviterId) }}
+          </mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-actions align="end">
+          <button mat-stroked-button color="primary" (click)="respondToTripInvite(invite, 'accepted')">
+            Join
+          </button>
+          <button mat-stroked-button color="warn" (click)="respondToTripInvite(invite, 'declined')">
+            Decline
+          </button>
+        </mat-card-actions>
+      </mat-card>
+    </div>
+  </div>
+
+  <!-- Loading State (tylko dla listy friends) -->
   <div *ngIf="loading" class="loading">
     <mat-progress-spinner mode="indeterminate"></mat-progress-spinner>
   </div>
@@ -109,8 +135,8 @@
     </div>
   </div>
 
-  <!-- Empty State -->
-  <div *ngIf="!loading && friends.length === 0 && friendRequests.length === 0" class="empty-state">
+  <!-- Empty State (uwzględniamy też brak tripInvites) -->
+  <div *ngIf="!loading && friends.length === 0 && friendRequests.length === 0 && tripInvites.length === 0" class="empty-state">
     <mat-icon class="empty-icon">people_outline</mat-icon>
     <h3>No friends yet</h3>
     <p>Start by adding your first friend using their User ID above</p>

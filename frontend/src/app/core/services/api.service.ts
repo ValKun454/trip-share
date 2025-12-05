@@ -6,6 +6,7 @@ import { GetTrip, CreateTrip } from '../models/trip.model'
 import { Expense, ExpenseCreate } from '../models/expense.model'
 import { DebtsSummary } from '../models/debts.model';
 import { Router } from '@angular/router';
+import { TripInvite } from '../models/trip-invite.model';
 
 // dannye parni derzjite krepko ne poteryaite
 
@@ -218,4 +219,19 @@ export class ApiService {
       this.http.get<any>(`${this.base}/trips/${encodeURIComponent(tripId)}/summary`, this.getAuthHeaders())
     );
   }
+  
+    // Zaproszenia do wyjazdów - lista przychodzących zaproszeń
+  getTripInvites(): Observable<TripInvite[]> {
+    return this.handleAuthError(
+      this.http.get<TripInvite[]>(`${this.base}/trips/invites`, this.getAuthHeaders())
+    );
+  }
+
+  // Odpowiedź na zaproszenie do wyjazdu (zaakceptuj / odrzuć)
+  respondToTripInvite(inviteId: number, status: 'accepted' | 'declined'): Observable<TripInvite> {
+    return this.handleAuthError(
+      this.http.put<TripInvite>(`${this.base}/trips/invites/${inviteId}`, { status }, this.getAuthHeaders())
+    );
+  }
+
 }
