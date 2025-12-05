@@ -26,7 +26,7 @@ def upgrade() -> None:
     sa.Column('trip_id', sa.Integer(), nullable=False),
     sa.Column('invitee_id', sa.Integer(), nullable=False),
     sa.Column('inviter_id', sa.Integer(), nullable=False),
-    sa.Column('status', sa.String(length=20), nullable=False),
+    sa.Column('status', sa.String(length=20), server_default='pending', nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.CheckConstraint("status IN ('pending', 'accepted', 'declined')", name='check_status'),
     sa.ForeignKeyConstraint(['invitee_id'], ['users.id'], ),
