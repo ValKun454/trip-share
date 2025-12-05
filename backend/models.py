@@ -30,9 +30,10 @@ class Trip(Base):
     created_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
     creator_id = Column(Integer, ForeignKey('users.id'))
 
-    _participants = relationship("Participant", back_populates="trip")
+    _participants = relationship("Participant", back_populates="trip", cascade="all, delete-orphan")
     creator = relationship('User', back_populates='trips_user')
-    expenses = relationship('Expense', back_populates='trip')
+    expenses = relationship('Expense', back_populates='trip', cascade="all, delete-orphan")
+    trip_invites = relationship('TripInvite', back_populates='trip', cascade="all, delete-orphan")
     
     # 2. This is the "fake" property Pydantic will read.
     #    It formats the data just as you want it.
@@ -66,7 +67,7 @@ class Expense(Base):
 
     trip = relationship('Trip', back_populates='expenses')
     payer = relationship('User', back_populates='expenses')
-    _positions = relationship('Position', back_populates='expense')
+    _positions = relationship('Position', back_populates='expense', cascade="all, delete-orphan")
 
     @property
     def positions(self) -> list[int]:
