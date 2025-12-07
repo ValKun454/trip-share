@@ -8,7 +8,7 @@ import uvicorn
 from datetime import timedelta
 from schemas import *
 from auth import authenticate_user, create_access_token, get_current_user, get_db, ACCESS_TOKEN_EXPIRE_MINUTES, get_password_hash
-from models import User, Trip as TripModel, Participant, Expense as ExpenseModel, Friend, TripInvite
+from models import User, Trip as TripModel, Participant, Expense as ExpenseModel, Friend, TripInvite, ParticipantShare
 from email_utils import create_verification_token, verify_verification_token, send_verification_email
 
 
@@ -933,6 +933,7 @@ def get_expenses(
     """
     Get all expenses for a specific trip
     Only returns expenses if current user has access to the trip
+    Includes participant shares for each expense
     """
     # First verify the trip exists and user has access
     trip = db.query(TripModel).filter(TripModel.id == trip_id).first()
@@ -961,7 +962,39 @@ def get_expenses(
         ExpenseModel.trip_id == trip_id
     ).all()
 
-    return expenses
+    # Build response with participant shares
+    response_list = []
+    for expense in expenses:
+        # Get participant shares for this expense
+        shares = db.query(ParticipantShare).filter(
+            ParticipantShare.expense_id == expense.id
+        ).all()
+
+        # Build shares list with usernames
+        shares_list = []
+        for share in shares:
+            user = db.query(User).filter(User.id == share.user_id).first()
+            shares_list.append({
+                "username": user.username if user else None,
+                "is_paying": share.is_paying,
+                "amount": str(share.amount)
+            })
+
+        expense_dict = {
+            "id": expense.id,
+            "is_scanned": expense.is_scanned,
+            "name": expense.name,
+            "description": expense.description,
+            "created_at": expense.created_at,
+            "trip_id": expense.trip_id,
+            "payer_id": expense.payer_id,
+            "is_even_division": expense.is_even_division,
+            "total_cost": expense.total_cost,
+            "participant_shares": shares_list
+        }
+        response_list.append(expense_dict)
+
+    return response_list
 
 
 @prefix_router.post("/trips/{trip_id}/expenses", response_model=ExpenseCreateResponse, status_code=status.HTTP_201_CREATED)
@@ -974,6 +1007,7 @@ def create_expense(
     """
     Create a new expense for a trip
     Only allowed if current user has access to the trip
+    Automatically creates participant shares for all trip participants
     """
     # Verify the trip exists and user has access
     trip = db.query(TripModel).filter(TripModel.id == trip_id).first()
@@ -1033,7 +1067,63 @@ def create_expense(
     db.commit()
     db.refresh(new_expense)
 
-    return new_expense
+    # Get all participants for this trip (including creator)
+    participants = db.query(Participant).filter(
+        Participant.trip_id == trip_id
+    ).all()
+
+    # Add creator to participants list if not already there
+    participant_ids = [p.user_id for p in participants]
+    if trip.creator_id not in participant_ids:
+        participant_ids.append(trip.creator_id)
+
+    # Create participant shares for each participant
+    for participant_id in participant_ids:
+        # Payer gets is_paying=True and amount=total_cost
+        # Others get is_paying=False and amount=0.0
+        is_payer = participant_id == data.payer_id
+        
+        share = ParticipantShare(
+            user_id=participant_id,
+            trip_id=trip_id,
+            expense_id=new_expense.id,
+            is_paying=is_payer,
+            amount=data.total_cost if is_payer else Decimal('0.0')
+        )
+        db.add(share)
+
+    db.commit()
+    db.refresh(new_expense)
+
+    # Get participant shares for response
+    shares = db.query(ParticipantShare).filter(
+        ParticipantShare.expense_id == new_expense.id
+    ).all()
+
+    shares_list = []
+    for share in shares:
+        user = db.query(User).filter(User.id == share.user_id).first()
+        shares_list.append({
+            "username": user.username if user else None,
+            "is_paying": share.is_paying,
+            "amount": str(share.amount)
+        })
+
+    response_data = {
+        "id": new_expense.id,
+        "is_scanned": new_expense.is_scanned,
+        "name": new_expense.name,
+        "description": new_expense.description,
+        "created_at": new_expense.created_at,
+        "trip_id": new_expense.trip_id,
+        "payer_id": new_expense.payer_id,
+        "is_even_division": new_expense.is_even_division,
+        "total_cost": new_expense.total_cost,
+        "participant_shares": shares_list
+    }
+
+    return response_data
+
 
 @prefix_router.put("/trips/{trip_id}/expenses/{expense_id}", response_model=Expense)
 def update_expense(
@@ -1046,7 +1136,8 @@ def update_expense(
     """
     Update an existing expense
     Only allowed if current user has access to the trip
-    Can update all expense fields except trip_id
+    Updates participant shares: sum of amounts where is_paying=true must equal total_cost
+    Sets amount to 0.0 for all shares where is_paying=false
     """
     # Verify the trip exists and user has access
     trip = db.query(TripModel).filter(TripModel.id == trip_id).first()
@@ -1120,9 +1211,69 @@ def update_expense(
         expense.payer_id = data.payer_id
 
     db.commit()
+
+    # Update participant shares if provided in request
+    if data.participant_shares is not None:
+        # Validate that sum of paying amounts equals total_cost
+        total_paying = sum(
+            share.amount for share in data.participant_shares if share.is_paying
+        )
+        
+        if total_paying != expense.total_cost:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Sum of amounts for paying participants ({total_paying}) must equal total cost ({expense.total_cost})"
+            )
+
+        # Update each participant share
+        for share_update in data.participant_shares:
+            share = db.query(ParticipantShare).filter(
+                ParticipantShare.expense_id == expense_id,
+                ParticipantShare.user_id == share_update.user_id
+            ).first()
+
+            if not share:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Participant share for user {share_update.user_id} not found"
+                )
+
+            share.is_paying = share_update.is_paying
+            share.amount = share_update.amount if share_update.is_paying else Decimal('0.0')
+
+        db.commit()
+
     db.refresh(expense)
 
-    return expense
+    # Get updated shares for response
+    updated_shares = db.query(ParticipantShare).filter(
+        ParticipantShare.expense_id == expense_id
+    ).all()
+
+    shares_list = []
+    for share in updated_shares:
+        user = db.query(User).filter(User.id == share.user_id).first()
+        shares_list.append({
+            "username": user.username if user else None,
+            "is_paying": share.is_paying,
+            "amount": str(share.amount)
+        })
+
+    response_data = {
+        "id": expense.id,
+        "is_scanned": expense.is_scanned,
+        "name": expense.name,
+        "description": expense.description,
+        "created_at": expense.created_at,
+        "trip_id": expense.trip_id,
+        "payer_id": expense.payer_id,
+        "is_even_division": expense.is_even_division,
+        "total_cost": expense.total_cost,
+        "participant_shares": shares_list
+    }
+
+    return response_data
+
 
 @prefix_router.delete("/trips/{trip_id}/expenses/{expense_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_expense(
@@ -1134,6 +1285,7 @@ def delete_expense(
     """
     Delete an expense
     Only allowed if current user has access to the trip
+    Automatically deletes associated participant shares (via cascade)
     """
     # Verify the trip exists and user has access
     trip = db.query(TripModel).filter(TripModel.id == trip_id).first()
@@ -1169,7 +1321,7 @@ def delete_expense(
             detail="Expense not found"
         )
 
-    # Delete the expense
+    # Delete the expense (cascade will handle participant shares)
     db.delete(expense)
     db.commit()
 

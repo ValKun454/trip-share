@@ -72,6 +72,15 @@ class TripUpdate(BaseModel):
 
 # Expense schemas
 
+# New schema for participant share in expense responses
+class ParticipantShareResponse(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    username: str
+    is_paying: bool = Field(alias="isPaying")
+    amount: str  # Using string for Decimal in JSON
+
+# Updated Expense schema with participant shares
 class Expense(BaseModel):
     model_config = ConfigDict(populate_by_name=True, from_attributes=True)
 
@@ -84,6 +93,7 @@ class Expense(BaseModel):
     payer_id: int = Field(alias="payerId")
     is_even_division: bool = Field(alias="isEvenDivision")
     total_cost: Decimal = Field(alias="totalCost")
+    participant_shares: list[ParticipantShareResponse] = Field(alias="participantShares")
 
 class ExpenseCreate(BaseModel):
     is_scanned: bool = Field(alias="isScanned")
@@ -105,6 +115,14 @@ class ExpenseCreateResponse(BaseModel):
     payer_id: int = Field(alias="payerId")
     is_even_division: bool = Field(alias="isEvenDivision")
     total_cost: Decimal = Field(alias="totalCost")
+    participant_shares: list[ParticipantShareResponse] = Field(alias="participantShares")
+
+class ParticipantShareUpdate(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    user_id: int = Field(alias="userId")
+    is_paying: bool = Field(alias="isPaying")
+    amount: Decimal
 
 class ExpenseUpdate(BaseModel):
     is_scanned: bool | None = Field(default=None, alias="isScanned")
@@ -113,6 +131,50 @@ class ExpenseUpdate(BaseModel):
     payer_id: int | None = Field(default=None, alias="payerId")
     is_even_division: bool | None = Field(default=None, alias="isEvenDivision")
     total_cost: Decimal | None = Field(default=None, alias="totalCost")
+    participant_shares: list[ParticipantShareUpdate] | None = Field(default=None, alias="participantShares")
+
+
+# class Expense(BaseModel):
+#     model_config = ConfigDict(populate_by_name=True, from_attributes=True)
+
+#     id: int
+#     is_scanned: bool = Field(alias="isScanned")
+#     name: str = Field(max_length=100)
+#     description: str = Field(max_length=500)
+#     created_at: datetime = Field(alias="createdAt")
+#     trip_id: int = Field(alias="tripId")
+#     payer_id: int = Field(alias="payerId")
+#     is_even_division: bool = Field(alias="isEvenDivision")
+#     total_cost: Decimal = Field(alias="totalCost")
+
+# class ExpenseCreate(BaseModel):
+#     is_scanned: bool = Field(alias="isScanned")
+#     name: str = Field(max_length=100)
+#     description: str = Field(max_length=500)
+#     payer_id: int = Field(alias="payerId")
+#     is_even_division: bool = Field(alias="isEvenDivision")
+#     total_cost: Decimal = Field(alias="totalCost")
+
+# class ExpenseCreateResponse(BaseModel):
+#     model_config = ConfigDict(populate_by_name=True)
+
+#     id: int
+#     is_scanned: bool = Field(alias="isScanned")
+#     name: str = Field(max_length=100)
+#     description: str = Field(max_length=500)
+#     created_at: datetime = Field(alias="createdAt")
+#     trip_id: int = Field(alias="tripId")
+#     payer_id: int = Field(alias="payerId")
+#     is_even_division: bool = Field(alias="isEvenDivision")
+#     total_cost: Decimal = Field(alias="totalCost")
+
+# class ExpenseUpdate(BaseModel):
+#     is_scanned: bool | None = Field(default=None, alias="isScanned")
+#     name: str | None = Field(default=None, max_length=100)
+#     description: str | None = Field(default=None, max_length=500)
+#     payer_id: int | None = Field(default=None, alias="payerId")
+#     is_even_division: bool | None = Field(default=None, alias="isEvenDivision")
+#     total_cost: Decimal | None = Field(default=None, alias="totalCost")
 
 class FriendResponse(BaseModel):
     model_config = ConfigDict(populate_by_name=True, from_attributes=True)
