@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, Boolean, DateTime, Date, ForeignKey, Numeric, UniqueConstraint, CheckConstraint
+from sqlalchemy import Column, String, Integer, Boolean, DateTime, Date, ForeignKey, Numeric, UniqueConstraint, CheckConstraint, ForeignKeyConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 import datetime
@@ -50,6 +50,7 @@ class Participant(Base):
 
     user = relationship("User", back_populates="trips")
     trip = relationship("Trip", back_populates="_participants")
+    shares = relationship("ParticipantShare", back_populates="participant")
 
 class Expense(Base):
     __tablename__ = 'expenses'
@@ -66,6 +67,7 @@ class Expense(Base):
 
     trip = relationship('Trip', back_populates='expenses')
     payer = relationship('User', back_populates='expenses')
+    shares = relationship('ParticipantShare', back_populates='expense', cascade="all, delete-orphan")
 
 
 class Friend(Base):
@@ -100,4 +102,21 @@ class TripInvite(Base):
     __table_args__ = (
         UniqueConstraint('trip_id', 'invitee_id', name='unique_trip_invite'),
         CheckConstraint("status IN ('pending', 'accepted', 'declined')", name='check_status'),
+    )
+
+class ParticipantShare(Base):
+    __tablename__ = 'participant_shares'
+
+    user_id = Column(Integer, primary_key=True)
+    trip_id = Column(Integer, primary_key=True)
+    expense_id = Column(Integer, ForeignKey('expenses.id'), primary_key=True)
+    is_paying = Column(Boolean, default=False, nullable=False)
+    amount = Column(Numeric(precision=20, scale=2), default=0.0, nullable=False)
+
+    participant = relationship("Participant", back_populates="shares", 
+                             foreign_keys=[user_id, trip_id])
+    expense = relationship("Expense", back_populates="shares")
+    
+    __table_args__ = (
+        ForeignKeyConstraint(['user_id', 'trip_id'], ['participants.user_id', 'participants.trip_id']),
     )
