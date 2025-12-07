@@ -51,7 +51,6 @@ class TripCreate(BaseModel):
     description: str = Field(max_length=500)
     beginning_date: date | None = Field(default=None, alias="beginningDate")
     end_date: date | None = Field(default=None, alias="endDate")
-    participants: list[int]
 
 class TripCreateResponse(BaseModel):
     model_config = ConfigDict(populate_by_name=True, from_attributes=True)
@@ -70,7 +69,6 @@ class TripUpdate(BaseModel):
     description: str | None = Field(default=None, max_length=500)
     beginning_date: date | None = Field(default=None, alias="beginningDate")
     end_date: date | None = Field(default=None, alias="endDate")
-    participants: list[int] | None = None
 
 # Expense schemas
 

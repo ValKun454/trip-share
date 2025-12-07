@@ -822,7 +822,7 @@ def create_trip(
     """
     Create a new trip
     Current user becomes the creator
-    Participants are added from the request
+    To add participants, use the invite system after creation
     """
     # Create the trip
     new_trip = TripModel(
@@ -837,27 +837,8 @@ def create_trip(
     db.commit()
     db.refresh(new_trip)
 
-    # Add participants
-    for participant_id in data.participants:
-        # Verify participant exists
-        participant_user = db.query(User).filter(User.id == participant_id).first()
-        if not participant_user:
-            # Rollback and raise error
-            db.rollback()
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"User with id {participant_id} not found"
-            )
-
-        # Create participant relationship
-        participant = Participant(
-            user_id=participant_id,
-            trip_id=new_trip.id
-        )
-        db.add(participant)
-
-    db.commit()
-    db.refresh(new_trip)
+    # Note: participants field will be removed from TripCreate schema
+    # Users must now use /trips/{trip_id}/invites to add participants
 
     return new_trip
 
@@ -871,7 +852,8 @@ def update_trip(
     """
     Update an existing trip
     Only the creator can update the trip
-    Can update name, description, dates, and participants
+    Can update name, description, and dates
+    To manage participants, use the invite system
     """
     # Query the trip
     trip = db.query(TripModel).filter(TripModel.id == trip_id).first()
@@ -899,33 +881,126 @@ def update_trip(
     if data.end_date is not None:
         trip.end_date = data.end_date
 
-    # Update participants if provided
-    if data.participants is not None:
-        # Remove all existing participants
-        db.query(Participant).filter(Participant.trip_id == trip_id).delete()
-
-        # Add new participants
-        for participant_id in data.participants:
-            # Verify participant exists
-            participant_user = db.query(User).filter(User.id == participant_id).first()
-            if not participant_user:
-                db.rollback()
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"User with id {participant_id} not found"
-                )
-
-            # Create participant relationship
-            participant = Participant(
-                user_id=participant_id,
-                trip_id=trip_id
-            )
-            db.add(participant)
+    # Note: participants management removed
+    # Users must use /trips/{trip_id}/invites to manage participants
 
     db.commit()
     db.refresh(trip)
 
     return trip
+# @prefix_router.post("/trips", response_model=TripCreateResponse, status_code=status.HTTP_201_CREATED)
+# def create_trip(
+#     data: TripCreate,
+#     db: Session = Depends(get_db),
+#     current_user: User = Depends(get_current_user)
+# ):
+#     """
+#     Create a new trip
+#     Current user becomes the creator
+#     Participants are added from the request
+#     """
+#     # Create the trip
+#     new_trip = TripModel(
+#         name=data.name,
+#         description=data.description,
+#         beginning_date=data.beginning_date,
+#         end_date=data.end_date,
+#         creator_id=current_user.id
+#     )
+
+#     db.add(new_trip)
+#     db.commit()
+#     db.refresh(new_trip)
+
+#     # Add participants
+#     for participant_id in data.participants:
+#         # Verify participant exists
+#         participant_user = db.query(User).filter(User.id == participant_id).first()
+#         if not participant_user:
+#             # Rollback and raise error
+#             db.rollback()
+#             raise HTTPException(
+#                 status_code=status.HTTP_400_BAD_REQUEST,
+#                 detail=f"User with id {participant_id} not found"
+#             )
+
+#         # Create participant relationship
+#         participant = Participant(
+#             user_id=participant_id,
+#             trip_id=new_trip.id
+#         )
+#         db.add(participant)
+
+#     db.commit()
+#     db.refresh(new_trip)
+
+#     return new_trip
+
+# @prefix_router.put("/trips/{trip_id}", response_model=Trip)
+# def update_trip(
+#     trip_id: int,
+#     data: TripUpdate,
+#     db: Session = Depends(get_db),
+#     current_user: User = Depends(get_current_user)
+# ):
+#     """
+#     Update an existing trip
+#     Only the creator can update the trip
+#     Can update name, description, dates, and participants
+#     """
+#     # Query the trip
+#     trip = db.query(TripModel).filter(TripModel.id == trip_id).first()
+
+#     if not trip:
+#         raise HTTPException(
+#             status_code=status.HTTP_404_NOT_FOUND,
+#             detail="Trip not found"
+#         )
+
+#     # Check if user is the creator
+#     if trip.creator_id != current_user.id:
+#         raise HTTPException(
+#             status_code=status.HTTP_403_FORBIDDEN,
+#             detail="Only the trip creator can update the trip"
+#         )
+
+#     # Update trip fields if provided
+#     if data.name is not None:
+#         trip.name = data.name
+#     if data.description is not None:
+#         trip.description = data.description
+#     if data.beginning_date is not None:
+#         trip.beginning_date = data.beginning_date
+#     if data.end_date is not None:
+#         trip.end_date = data.end_date
+
+#     # Update participants if provided
+#     if data.participants is not None:
+#         # Remove all existing participants
+#         db.query(Participant).filter(Participant.trip_id == trip_id).delete()
+
+#         # Add new participants
+#         for participant_id in data.participants:
+#             # Verify participant exists
+#             participant_user = db.query(User).filter(User.id == participant_id).first()
+#             if not participant_user:
+#                 db.rollback()
+#                 raise HTTPException(
+#                     status_code=status.HTTP_400_BAD_REQUEST,
+#                     detail=f"User with id {participant_id} not found"
+#                 )
+
+#             # Create participant relationship
+#             participant = Participant(
+#                 user_id=participant_id,
+#                 trip_id=trip_id
+#             )
+#             db.add(participant)
+
+#     db.commit()
+#     db.refresh(trip)
+
+#     return trip
 
 @prefix_router.delete("/trips/{trip_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_trip(
