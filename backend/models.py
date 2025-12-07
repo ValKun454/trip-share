@@ -16,7 +16,6 @@ class User(Base):
 
     trips_user = relationship('Trip', back_populates='creator')
     expenses = relationship('Expense', back_populates='payer')
-    positions = relationship('Position', back_populates='participant')
     trips = relationship("Participant", back_populates="user")
 
 class Trip(Base):
@@ -67,20 +66,7 @@ class Expense(Base):
 
     trip = relationship('Trip', back_populates='expenses')
     payer = relationship('User', back_populates='expenses')
-    _positions = relationship('Position', back_populates='expense', cascade="all, delete-orphan")
 
-    @property
-    def positions(self) -> list[int]:
-        return [p.participant_id for p in self._positions]
-
-class Position(Base):
-    __tablename__ = 'positions'
-
-    expense_id = Column(Integer, ForeignKey('expenses.id'), primary_key=True)
-    participant_id = Column(Integer, ForeignKey('users.id'), primary_key=True)
-
-    expense = relationship('Expense', back_populates='_positions')
-    participant = relationship('User', back_populates='positions')
 
 class Friend(Base):
     __tablename__ = 'friends'

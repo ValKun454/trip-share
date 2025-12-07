@@ -84,7 +84,6 @@ class Expense(BaseModel):
     payer_id: int = Field(alias="payerId")
     is_even_division: bool = Field(alias="isEvenDivision")
     total_cost: Decimal = Field(alias="totalCost")
-    positions: list[int]
 
 class ExpenseCreate(BaseModel):
     is_scanned: bool = Field(alias="isScanned")
@@ -106,7 +105,6 @@ class ExpenseCreateResponse(BaseModel):
     payer_id: int = Field(alias="payerId")
     is_even_division: bool = Field(alias="isEvenDivision")
     total_cost: Decimal = Field(alias="totalCost")
-    positions: list[int]
 
 class ExpenseUpdate(BaseModel):
     is_scanned: bool | None = Field(default=None, alias="isScanned")
@@ -115,18 +113,6 @@ class ExpenseUpdate(BaseModel):
     payer_id: int | None = Field(default=None, alias="payerId")
     is_even_division: bool | None = Field(default=None, alias="isEvenDivision")
     total_cost: Decimal | None = Field(default=None, alias="totalCost")
-
-class Position(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, from_attributes=True)
-
-    expense_id: int = Field(alias="expenseId")
-    participant_id: int = Field(alias="participantId")
-
-class PositionCreate(BaseModel):
-    participant_id: int = Field(alias="participantId")
-
-class PositionUpdate(BaseModel):
-    participant_id: int = Field(alias="participantId")
 
 class FriendResponse(BaseModel):
     model_config = ConfigDict(populate_by_name=True, from_attributes=True)
