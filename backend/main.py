@@ -821,8 +821,8 @@ def create_trip(
 ):
     """
     Create a new trip
-    Current user becomes the creator
-    To add participants, use the invite system after creation
+    Current user becomes the creator and is automatically added as a participant
+    To add other participants, use the invite system after creation
     """
     # Create the trip
     new_trip = TripModel(
@@ -837,8 +837,14 @@ def create_trip(
     db.commit()
     db.refresh(new_trip)
 
-    # Note: participants field will be removed from TripCreate schema
-    # Users must now use /trips/{trip_id}/invites to add participants
+    # Add creator as a participant
+    creator_participant = Participant(
+        user_id=current_user.id,
+        trip_id=new_trip.id
+    )
+    db.add(creator_participant)
+    db.commit()
+    db.refresh(new_trip)
 
     return new_trip
 
