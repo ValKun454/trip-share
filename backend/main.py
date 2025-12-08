@@ -10,6 +10,7 @@ from schemas import *
 from auth import authenticate_user, create_access_token, get_current_user, get_db, ACCESS_TOKEN_EXPIRE_MINUTES, get_password_hash
 from models import User, Trip as TripModel, Participant, Expense as ExpenseModel, Friend, TripInvite, ParticipantShare
 from email_utils import create_verification_token, verify_verification_token, send_verification_email
+from decimal import Decimal, ROUND_DOWN
 
 
 app = FastAPI()
@@ -1003,6 +1004,34 @@ def get_expenses(
     return response_list
 
 
+def calculate_even_division(total_cost: Decimal, paying_shares: list) -> dict[int, Decimal]:
+    """
+    Calculate even division of total_cost among paying participants.
+    Returns dict mapping user_id to amount.
+    Adds remainder to first participant.
+    """
+    num_paying = len(paying_shares)
+    if num_paying == 0:
+        return {}
+    
+    # Calculate base amount (rounded down to 2 decimal places)
+    base_amount = (total_cost / num_paying).quantize(Decimal('0.01'), rounding=ROUND_DOWN)
+    
+    # Calculate remainder
+    total_distributed = base_amount * num_paying
+    remainder = total_cost - total_distributed
+    
+    # Create amounts dict
+    amounts = {}
+    for i, share in enumerate(paying_shares):
+        if i == 0:
+            # First participant gets base amount + remainder
+            amounts[share.user_id] = base_amount + remainder
+        else:
+            amounts[share.user_id] = base_amount
+    
+    return amounts
+
 @prefix_router.post("/trips/{trip_id}/expenses", response_model=ExpenseCreateResponse, status_code=status.HTTP_201_CREATED)
 def create_expense(
     trip_id: int,
@@ -1013,7 +1042,14 @@ def create_expense(
     """
     Create a new expense for a trip
     Only allowed if current user has access to the trip
-    Requires participant_shares list where sum of amounts for is_paying=True must equal total_cost
+    
+    If is_even_division=True:
+    - Amount in participant_shares is ignored
+    - total_cost is split evenly among participants where is_paying=True
+    - Remainder is added to first paying participant
+    
+    If is_even_division=False:
+    - Sum of amounts for is_paying=True must equal total_cost
     """
     # Verify the trip exists and user has access
     trip = db.query(TripModel).filter(TripModel.id == trip_id).first()
@@ -1065,17 +1101,6 @@ def create_expense(
             detail="participant_shares is required and cannot be empty"
         )
 
-    # Validate that sum of paying amounts equals total_cost
-    total_paying = sum(
-        share.amount for share in data.participant_shares if share.is_paying
-    )
-    
-    if total_paying != data.total_cost:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Sum of amounts for paying participants ({total_paying}) must equal total cost ({data.total_cost})"
-        )
-
     # Get all participants for this trip (including creator)
     participants = db.query(Participant).filter(
         Participant.trip_id == trip_id
@@ -1094,6 +1119,38 @@ def create_expense(
                 detail=f"User {user_id} is not a participant of this trip"
             )
 
+    # Handle even division vs custom amounts
+    if data.is_even_division:
+        # Filter paying shares
+        paying_shares = [share for share in data.participant_shares if share.is_paying]
+        
+        if not paying_shares:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="At least one participant must be paying"
+            )
+        
+        # Calculate even division
+        share_amounts = calculate_even_division(data.total_cost, paying_shares)
+    else:
+        # Validate that sum of paying amounts equals total_cost
+        total_paying = sum(
+            share.amount for share in data.participant_shares if share.is_paying
+        )
+        
+        if total_paying != data.total_cost:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Sum of amounts for paying participants ({total_paying}) must equal total cost ({data.total_cost})"
+            )
+        
+        # Use provided amounts
+        share_amounts = {
+            share.user_id: share.amount 
+            for share in data.participant_shares 
+            if share.is_paying
+        }
+
     # Create the expense
     new_expense = ExpenseModel(
         is_scanned=data.is_scanned,
@@ -1109,14 +1166,16 @@ def create_expense(
     db.commit()
     db.refresh(new_expense)
 
-    # Create participant shares based on provided data
+    # Create participant shares with calculated/provided amounts
     for share_data in data.participant_shares:
+        amount = share_amounts.get(share_data.user_id, Decimal('0.0')) if share_data.is_paying else Decimal('0.0')
+        
         share = ParticipantShare(
             user_id=share_data.user_id,
             trip_id=trip_id,
             expense_id=new_expense.id,
             is_paying=share_data.is_paying,
-            amount=share_data.amount if share_data.is_paying else Decimal('0.0')
+            amount=amount
         )
         db.add(share)
 
@@ -1164,8 +1223,15 @@ def update_expense(
     """
     Update an existing expense
     Only allowed if current user has access to the trip
-    Updates participant shares: sum of amounts where is_paying=true must equal total_cost
-    Sets amount to 0.0 for all shares where is_paying=false
+    
+    If is_even_division=True:
+    - Amount in participant_shares is ignored
+    - total_cost is split evenly among participants where is_paying=True
+    - Remainder is added to first paying participant
+    
+    If is_even_division=False:
+    - Sum of amounts for is_paying=True must equal total_cost
+    - Sets amount to 0.0 for all shares where is_paying=False
     """
     # Verify the trip exists and user has access
     trip = db.query(TripModel).filter(TripModel.id == trip_id).first()
@@ -1242,16 +1308,37 @@ def update_expense(
 
     # Update participant shares if provided in request
     if data.participant_shares is not None:
-        # Validate that sum of paying amounts equals total_cost
-        total_paying = sum(
-            share.amount for share in data.participant_shares if share.is_paying
-        )
-        
-        if total_paying != expense.total_cost:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Sum of amounts for paying participants ({total_paying}) must equal total cost ({expense.total_cost})"
+        # Handle even division vs custom amounts
+        if expense.is_even_division:
+            # Filter paying shares
+            paying_shares = [share for share in data.participant_shares if share.is_paying]
+            
+            if not paying_shares:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="At least one participant must be paying"
+                )
+            
+            # Calculate even division
+            share_amounts = calculate_even_division(expense.total_cost, paying_shares)
+        else:
+            # Validate that sum of paying amounts equals total_cost
+            total_paying = sum(
+                share.amount for share in data.participant_shares if share.is_paying
             )
+            
+            if total_paying != expense.total_cost:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Sum of amounts for paying participants ({total_paying}) must equal total cost ({expense.total_cost})"
+                )
+            
+            # Use provided amounts
+            share_amounts = {
+                share.user_id: share.amount 
+                for share in data.participant_shares 
+                if share.is_paying
+            }
 
         # Update each participant share
         for share_update in data.participant_shares:
@@ -1267,7 +1354,7 @@ def update_expense(
                 )
 
             share.is_paying = share_update.is_paying
-            share.amount = share_update.amount if share_update.is_paying else Decimal('0.0')
+            share.amount = share_amounts.get(share_update.user_id, Decimal('0.0')) if share_update.is_paying else Decimal('0.0')
 
         db.commit()
 
