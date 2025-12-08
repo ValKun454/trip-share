@@ -1013,7 +1013,7 @@ def create_expense(
     """
     Create a new expense for a trip
     Only allowed if current user has access to the trip
-    Automatically creates participant shares for all trip participants
+    Requires participant_shares list where sum of amounts for is_paying=True must equal total_cost
     """
     # Verify the trip exists and user has access
     trip = db.query(TripModel).filter(TripModel.id == trip_id).first()
@@ -1058,6 +1058,42 @@ def create_expense(
             detail="Payer must be a participant of the trip"
         )
 
+    # Validate participant_shares
+    if not data.participant_shares:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="participant_shares is required and cannot be empty"
+        )
+
+    # Validate that sum of paying amounts equals total_cost
+    total_paying = sum(
+        share.amount for share in data.participant_shares if share.is_paying
+    )
+    
+    if total_paying != data.total_cost:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Sum of amounts for paying participants ({total_paying}) must equal total cost ({data.total_cost})"
+        )
+
+    # Get all participants for this trip (including creator)
+    participants = db.query(Participant).filter(
+        Participant.trip_id == trip_id
+    ).all()
+    
+    participant_ids = [p.user_id for p in participants]
+    if trip.creator_id not in participant_ids:
+        participant_ids.append(trip.creator_id)
+
+    # Validate that all users in participant_shares are trip participants
+    share_user_ids = [share.user_id for share in data.participant_shares]
+    for user_id in share_user_ids:
+        if user_id not in participant_ids:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"User {user_id} is not a participant of this trip"
+            )
+
     # Create the expense
     new_expense = ExpenseModel(
         is_scanned=data.is_scanned,
@@ -1073,28 +1109,14 @@ def create_expense(
     db.commit()
     db.refresh(new_expense)
 
-    # Get all participants for this trip (including creator)
-    participants = db.query(Participant).filter(
-        Participant.trip_id == trip_id
-    ).all()
-
-    # Add creator to participants list if not already there
-    participant_ids = [p.user_id for p in participants]
-    if trip.creator_id not in participant_ids:
-        participant_ids.append(trip.creator_id)
-
-    # Create participant shares for each participant
-    for participant_id in participant_ids:
-        # Payer gets is_paying=True and amount=total_cost
-        # Others get is_paying=False and amount=0.0
-        is_payer = participant_id == data.payer_id
-        
+    # Create participant shares based on provided data
+    for share_data in data.participant_shares:
         share = ParticipantShare(
-            user_id=participant_id,
+            user_id=share_data.user_id,
             trip_id=trip_id,
             expense_id=new_expense.id,
-            is_paying=is_payer,
-            amount=data.total_cost if is_payer else Decimal('0.0')
+            is_paying=share_data.is_paying,
+            amount=share_data.amount if share_data.is_paying else Decimal('0.0')
         )
         db.add(share)
 

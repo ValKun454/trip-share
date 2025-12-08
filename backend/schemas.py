@@ -95,6 +95,14 @@ class Expense(BaseModel):
     total_cost: Decimal = Field(alias="totalCost")
     participant_shares: list[ParticipantShareResponse] = Field(alias="participantShares")
 
+
+class ParticipantShareUpdate(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    user_id: int = Field(alias="userId")
+    is_paying: bool = Field(alias="isPaying")
+    amount: Decimal
+
 class ExpenseCreate(BaseModel):
     is_scanned: bool = Field(alias="isScanned")
     name: str = Field(max_length=100)
@@ -102,6 +110,7 @@ class ExpenseCreate(BaseModel):
     payer_id: int = Field(alias="payerId")
     is_even_division: bool = Field(alias="isEvenDivision")
     total_cost: Decimal = Field(alias="totalCost")
+    participant_shares: list[ParticipantShareUpdate] = Field(alias="participantShares")
 
 class ExpenseCreateResponse(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
@@ -117,12 +126,7 @@ class ExpenseCreateResponse(BaseModel):
     total_cost: Decimal = Field(alias="totalCost")
     participant_shares: list[ParticipantShareResponse] = Field(alias="participantShares")
 
-class ParticipantShareUpdate(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
 
-    user_id: int = Field(alias="userId")
-    is_paying: bool = Field(alias="isPaying")
-    amount: Decimal
 
 class ExpenseUpdate(BaseModel):
     is_scanned: bool | None = Field(default=None, alias="isScanned")
