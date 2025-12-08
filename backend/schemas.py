@@ -133,6 +133,18 @@ class ExpenseUpdate(BaseModel):
     total_cost: Decimal | None = Field(default=None, alias="totalCost")
     participant_shares: list[ParticipantShareUpdate] | None = Field(default=None, alias="participantShares")
 
+class OweDetail(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    user_id: int = Field(alias="userId")
+    user_name: str | None = Field(alias="userName")
+    amount: str  # Using string for Decimal in JSON
+
+class OweSummary(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    owe_to_me: list[OweDetail] = Field(alias="oweToMe")
+    i_owe_to: list[OweDetail] = Field(alias="iOweTo")
 
 # class Expense(BaseModel):
 #     model_config = ConfigDict(populate_by_name=True, from_attributes=True)

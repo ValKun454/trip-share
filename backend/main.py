@@ -1328,6 +1328,141 @@ def delete_expense(
     return None
 
 
+@prefix_router.get("/trips/{trip_id}/owe", response_model=OweSummary)
+def get_trip_owe_summary(
+    trip_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Calculate money owed for a trip
+    Returns who owes money to current user and who current user owes money to
+    """
+    # Verify the trip exists and user has access
+    trip = db.query(TripModel).filter(TripModel.id == trip_id).first()
+
+    if not trip:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Trip not found"
+        )
+
+    # Check if user has access to this trip
+    is_creator = trip.creator_id == current_user.id
+    is_participant = db.query(Participant).filter(
+        Participant.trip_id == trip_id,
+        Participant.user_id == current_user.id
+    ).first() is not None
+
+    if not is_creator and not is_participant:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You don't have access to this trip"
+        )
+
+    # Get all expenses for this trip
+    expenses = db.query(ExpenseModel).filter(
+        ExpenseModel.trip_id == trip_id
+    ).all()
+
+    # Dictionaries to accumulate debts
+    owe_to_me = {}  # {user_id: amount}
+    i_owe_to = {}   # {user_id: amount}
+
+    for expense in expenses:
+        if expense.payer_id == current_user.id:
+            # I paid for this expense - others may owe me
+            shares = db.query(ParticipantShare).filter(
+                ParticipantShare.expense_id == expense.id,
+                ParticipantShare.is_paying == True,
+                ParticipantShare.user_id != current_user.id
+            ).all()
+
+            for share in shares:
+                if share.user_id not in owe_to_me:
+                    owe_to_me[share.user_id] = Decimal('0.0')
+                owe_to_me[share.user_id] += share.amount
+
+        else:
+            # Someone else paid - I may owe them
+            my_share = db.query(ParticipantShare).filter(
+                ParticipantShare.expense_id == expense.id,
+                ParticipantShare.user_id == current_user.id,
+                ParticipantShare.is_paying == True
+            ).first()
+
+            if my_share:
+                payer_id = expense.payer_id
+                if payer_id not in i_owe_to:
+                    i_owe_to[payer_id] = Decimal('0.0')
+                i_owe_to[payer_id] += my_share.amount
+
+    # Get all trip participants (including creator)
+    participants = db.query(Participant).filter(
+        Participant.trip_id == trip_id
+    ).all()
+    
+    participant_ids = [p.user_id for p in participants]
+    if trip.creator_id not in participant_ids:
+        participant_ids.append(trip.creator_id)
+    
+    # Remove current user from the list
+    participant_ids = [pid for pid in participant_ids if pid != current_user.id]
+
+    owe_to_me_list = []
+    i_owe_to_list = []
+    
+    for user_id in participant_ids:
+        user = db.query(User).filter(User.id == user_id).first()
+        
+        they_owe_me = owe_to_me.get(user_id, Decimal('0.0'))
+        i_owe_them = i_owe_to.get(user_id, Decimal('0.0'))
+        
+        # Calculate net amount
+        net_amount = they_owe_me - i_owe_them
+        
+        if net_amount > 0:
+            # They owe me (net positive)
+            owe_to_me_list.append({
+                "user_id": user_id,
+                "user_name": user.username if user else None,
+                "amount": str(net_amount)
+            })
+            i_owe_to_list.append({
+                "user_id": user_id,
+                "user_name": user.username if user else None,
+                "amount": "0.00"
+            })
+        elif net_amount < 0:
+            # I owe them (net negative)
+            owe_to_me_list.append({
+                "user_id": user_id,
+                "user_name": user.username if user else None,
+                "amount": "0.00"
+            })
+            i_owe_to_list.append({
+                "user_id": user_id,
+                "user_name": user.username if user else None,
+                "amount": str(abs(net_amount))
+            })
+        else:
+            # Balanced - both zero
+            owe_to_me_list.append({
+                "user_id": user_id,
+                "user_name": user.username if user else None,
+                "amount": "0.00"
+            })
+            i_owe_to_list.append({
+                "user_id": user_id,
+                "user_name": user.username if user else None,
+                "amount": "0.00"
+            })
+
+    return {
+        "owe_to_me": owe_to_me_list,
+        "i_owe_to": i_owe_to_list
+    }
+
 app.include_router(prefix_router)
 
 
