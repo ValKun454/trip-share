@@ -51,6 +51,89 @@
       </mat-card-content>
     </mat-card>
 
+    <!-- Invite friends -->
+    <mat-card class="invite-card">
+      <mat-card-header>
+        <mat-card-title>Invite friends</mat-card-title>
+        <mat-card-subtitle>
+          Friends must already be in your friends list.
+        </mat-card-subtitle>
+      </mat-card-header>
+
+      <mat-card-content>
+        <!-- manual ID + actions -->
+        <form [formGroup]="inviteForm" (ngSubmit)="sendInvites()">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Friend User ID (optional)</mat-label>
+            <input matInput formControlName="friendId" type="number" min="1" />
+            <mat-hint>Use this if you want to type an ID manually.</mat-hint>
+          </mat-form-field>
+
+          <div class="invite-actions">
+            <button mat-stroked-button type="button" (click)="toggleInvitePanel()">
+              <mat-icon>group_add</mat-icon>
+              Add friends
+            </button>
+            <span class="chips-info" *ngIf="friendsForInvite.length">
+              Selected: {{ selectedInviteFriendIds.length }}
+            </span>
+            <span class="chips-info" *ngIf="!friendsForInvite.length && !friendsInviteLoading">
+              You have no friends available to invite.
+            </span>
+            <span class="spacer"></span>
+            <button mat-flat-button color="accent" type="submit">
+              Send invite
+            </button>
+          </div>
+        </form>
+
+        <!-- friends picker panel -->
+        <div class="friends-picker" *ngIf="showInvitePanel">
+          <div *ngIf="friendsInviteLoading" class="friends-loading">
+            Loading friends...
+          </div>
+          <div *ngIf="friendsInviteError" class="friends-error">
+            {{ friendsInviteError }}
+          </div>
+
+          <div
+            *ngIf="!friendsInviteLoading && !friendsInviteError && friendsForInvite.length"
+            class="friends-list"
+          >
+            <button
+              type="button"
+              mat-stroked-button
+              class="friend-chip"
+              *ngFor="let f of friendsForInvite"
+              [class.friend-chip-selected]="selectedInviteFriendIds.includes(f.id)"
+              (click)="toggleInviteFriend(f.id)"
+            >
+              <span class="friend-avatar">{{ f.label.charAt(0) }}</span>
+              <span class="friend-name">{{ f.label }}</span>
+              <mat-icon *ngIf="selectedInviteFriendIds.includes(f.id)">check</mat-icon>
+            </button>
+          </div>
+
+          <div
+            *ngIf="!friendsInviteLoading && !friendsInviteError && !friendsForInvite.length"
+            class="friends-empty"
+          >
+            All of your friends are already in this trip.
+          </div>
+        </div>
+
+        <!-- invite messages -->
+        <div class="success-message" *ngIf="inviteSuccessMessage">
+          <mat-icon>check_circle</mat-icon>
+          <span>{{ inviteSuccessMessage }}</span>
+        </div>
+        <div class="error-message" *ngIf="inviteErrorMessage">
+          <mat-icon>error</mat-icon>
+          <span>{{ inviteErrorMessage }}</span>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
     <!-- Add Expense Form -->
     <mat-card class="add-expense" *ngIf="showAddExpense">
       <mat-card-title>Add New Expense</mat-card-title>
@@ -58,9 +141,13 @@
         <form [formGroup]="expenseForm" (ngSubmit)="addExpense()">
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>Expense Name</mat-label>
-            <input matInput formControlName="name">
-            <mat-error *ngIf="expenseForm.get('name')?.hasError('required')">Name is required</mat-error>
-            <mat-error *ngIf="expenseForm.get('name')?.hasError('minlength')">Minimum 2 characters</mat-error>
+            <input matInput formControlName="name" />
+            <mat-error *ngIf="expenseForm.get('name')?.hasError('required')">
+              Name is required
+            </mat-error>
+            <mat-error *ngIf="expenseForm.get('name')?.hasError('minlength')">
+              Minimum 2 characters
+            </mat-error>
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="full-width">
@@ -70,15 +157,21 @@
 
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>Amount (PLN)</mat-label>
-            <input matInput formControlName="totalCost" type="number" step="0.01">
-            <mat-error *ngIf="expenseForm.get('totalCost')?.hasError('required')">Amount is required</mat-error>
-            <mat-error *ngIf="expenseForm.get('totalCost')?.hasError('min')">Amount must be greater than 0</mat-error>
+            <input matInput formControlName="totalCost" type="number" step="0.01" />
+            <mat-error *ngIf="expenseForm.get('totalCost')?.hasError('required')">
+              Amount is required
+            </mat-error>
+            <mat-error *ngIf="expenseForm.get('totalCost')?.hasError('min')">
+              Amount must be greater than 0
+            </mat-error>
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>Paid By (User ID)</mat-label>
-            <input matInput formControlName="payerId" type="number">
-            <mat-error *ngIf="expenseForm.get('payerId')?.hasError('required')">Payer ID is required</mat-error>
+            <input matInput formControlName="payerId" type="number" />
+            <mat-error *ngIf="expenseForm.get('payerId')?.hasError('required')">
+              Payer ID is required
+            </mat-error>
           </mat-form-field>
 
           <div class="checkbox-row">
@@ -100,7 +193,7 @@
     <div class="expenses-section">
       <h3>Expenses ({{ expenses.length }})</h3>
 
-      <div *ngIf="expenses.length === 0" class="empty">
+      <div class="empty" *ngIf="expenses.length === 0">
         <mat-icon>receipt_long</mat-icon>
         <p>No expenses yet. Add your first expense!</p>
       </div>
@@ -135,7 +228,13 @@
         </mat-card-content>
 
         <mat-card-actions align="end">
-          <button mat-icon-button aria-label="delete" (click)="deleteExpense(exp.id)" disabled title="Delete not yet implemented">
+          <button
+            mat-icon-button
+            aria-label="delete"
+            (click)="deleteExpense(exp.id)"
+            disabled
+            title="Delete not yet implemented"
+          >
             <mat-icon>delete</mat-icon>
           </button>
         </mat-card-actions>

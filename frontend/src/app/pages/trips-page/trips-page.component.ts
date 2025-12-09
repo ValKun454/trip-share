@@ -12,6 +12,7 @@ import { MatDatepickerModule } from "@angular/material/datepicker";
 import { MatNativeDateModule, MAT_DATE_FORMATS, MAT_DATE_LOCALE, DateAdapter } from "@angular/material/core";
 import { MatTooltipModule } from "@angular/material/tooltip";
 import { RouterModule } from "@angular/router";
+import { forkJoin } from "rxjs";
 import { ApiService } from "../../core/services/api.service";
 import { GetTrip, CreateTrip } from "../../core/models/trip.model";
 import { AuthService } from "../../core/services/auth.service";
@@ -264,7 +265,7 @@ export class TripsPageComponent implements OnInit {
           .filter((num: number) => num > 0)
       : [];
 
-    // добавить выбранных друзей
+    // dodaj wybranych znajomych do ogólnej listy uczestników
     if (this.selectedFriendIds.length) {
       const set = new Set<number>(participants);
       this.selectedFriendIds.forEach(id => set.add(id));
@@ -321,12 +322,36 @@ export class TripsPageComponent implements OnInit {
         next: (response: any) => {
           console.log('Trip created successfully:', response);
           const tripId = response?.id;
-          if (tripId) {
+
+          if (!tripId) {
+            this.error = 'Trip created but response format unexpected';
+            return;
+          }
+
+          if (!participants.length) {
             this.toggleCreate();
             this.loadTrips();
-          } else {
-            this.error = 'Trip created but response format unexpected';
+            return;
           }
+
+          const inviteCalls = participants.map(uid =>
+            this.api.inviteUserToTrip(tripId, uid)
+          );
+
+          forkJoin(inviteCalls).subscribe({
+            next: () => {
+              console.log('All trip invites created');
+              this.toggleCreate();
+              this.loadTrips();
+            },
+            error: (err) => {
+              console.error('Trip created, but sending some invites failed', err);
+              this.error = err?.error?.detail || 'Trip created, but failed to send some invites';
+              // Wyjazd już utworzony – formularz nadal ukrywamy i aktualizujemy listę
+              this.toggleCreate();
+              this.loadTrips();
+            }
+          });
         },
         error: (e) => {
           console.error('Create trip failed', e);

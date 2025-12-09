@@ -2,14 +2,13 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
-import { GetTrip, CreateTrip } from '../models/trip.model'
-import { Expense, ExpenseCreate } from '../models/expense.model'
+import { GetTrip, CreateTrip } from '../models/trip.model';
+import { Expense, ExpenseCreate } from '../models/expense.model';
 import { DebtsSummary } from '../models/debts.model';
 import { Router } from '@angular/router';
 import { TripInvite } from '../models/trip-invite.model';
 
 // dannye parni derzjite krepko ne poteryaite
-
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
@@ -20,7 +19,7 @@ export class ApiService {
 
   private getAuthHeaders() {
     const token = localStorage.getItem('authToken');
-    const headers: Record<string,string> = {};
+    const headers: Record<string, string> = {};
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
@@ -60,7 +59,7 @@ export class ApiService {
     if (data.username !== undefined) payload.username = data.username;
     if (data.email !== undefined) payload.email = data.email;
     if (data.password !== undefined) payload.password = data.password;
-    
+
     return this.handleAuthError(
       this.http.put(`${this.base}/me`, payload, this.getAuthHeaders())
     );
@@ -71,7 +70,7 @@ export class ApiService {
     return this.http.post(`${this.base}/register`, payload);
   }
 
-  // resend verification mail 
+  // resend verification mail
   resendVerification(email: string): Observable<any> {
     return this.http.post(`${this.base}/resend-verification`, { email });
   }
@@ -87,14 +86,15 @@ export class ApiService {
       this.http.get<GetTrip[]>(`${this.base}/trips`, this.getAuthHeaders())
     );
   }
+
   getTrip(id: number): Observable<GetTrip> {
     return this.handleAuthError(
       this.http.get<GetTrip>(`${this.base}/trips/${id}`, this.getAuthHeaders())
     );
   }
+
   /**
    * Create trip - send snake_case field names expected by backend
-   * Backend schema TripCreate: { name, description, participants }
    */
   createTrip(dto: CreateTrip): Observable<any> {
     const payload = {
@@ -109,7 +109,6 @@ export class ApiService {
 
   /**
    * Update trip - send snake_case field names expected by backend
-   * Backend schema TripUpdate: { name, description, beginning_date, end_date, participants }
    */
   updateTrip(tripId: number, dto: any): Observable<GetTrip> {
     const payload: any = {
@@ -119,7 +118,6 @@ export class ApiService {
       end_date: dto.endDate || undefined,
       participants: dto.participants || undefined
     };
-    // Remove undefined values
     Object.keys(payload).forEach(key => payload[key] === undefined && delete payload[key]);
     return this.handleAuthError(
       this.http.put<GetTrip>(`${this.base}/trips/${tripId}`, payload, this.getAuthHeaders())
@@ -136,27 +134,19 @@ export class ApiService {
   }
 
   // Friends endpoints
-  /**
-   * Get all friends for current user (accepted + pending)
-   */
+
   getFriends(): Observable<any[]> {
     return this.handleAuthError(
       this.http.get<any[]>(`${this.base}/friends`, this.getAuthHeaders())
     );
   }
 
-  /**
-   * Get pending friend requests for current user
-   */
   getFriendRequests(): Observable<any[]> {
     return this.handleAuthError(
       this.http.get<any[]>(`${this.base}/friends/requests`, this.getAuthHeaders())
     );
   }
 
-  /**
-   * Add a friend by user ID (send friend invite)
-   */
   addFriend(friendId: number): Observable<any> {
     const payload = { friendId: friendId };
     return this.handleAuthError(
@@ -164,18 +154,12 @@ export class ApiService {
     );
   }
 
-  /**
-   * Accept friend request by friendship row ID
-   */
   acceptFriendRequest(friendshipId: number): Observable<any> {
     return this.handleAuthError(
       this.http.put<any>(`${this.base}/friends/${friendshipId}/accept`, {}, this.getAuthHeaders())
     );
   }
 
-  /**
-   * Remove a friend / cancel friendship by user ID
-   */
   removeFriend(friendId: number): Observable<void> {
     return this.handleAuthError(
       this.http.delete<void>(`${this.base}/friends/${friendId}`, this.getAuthHeaders())
@@ -188,9 +172,9 @@ export class ApiService {
       this.http.get<Expense[]>(`${this.base}/trips/${tripId}/expenses`, this.getAuthHeaders())
     );
   }
+
   /**
-   * Create expense - ALL fields now use camelCase Pydantic aliases
-   * Backend ExpenseCreate schema: { isScanned, name, description, payerId, isEvenDivision, totalCost }
+   * Create expense
    */
   createExpense(tripId: number, exp: ExpenseCreate): Observable<Expense> {
     const payload = {
@@ -199,7 +183,7 @@ export class ApiService {
       description: exp.description || '',
       payerId: exp.payerId,
       isEvenDivision: exp.isEvenDivision,
-      totalCost: exp.totalCost  // NOW has alias in backend!
+      totalCost: exp.totalCost
     };
     return this.handleAuthError(
       this.http.post<Expense>(`${this.base}/trips/${tripId}/expenses`, payload, this.getAuthHeaders())
@@ -213,17 +197,25 @@ export class ApiService {
     );
   }
 
-  // Trip summary endpoint (expected to return settlement / summary data for a trip)
+  // Trip summary endpoint
   getTripSummary(tripId: string): Observable<any> {
     return this.handleAuthError(
       this.http.get<any>(`${this.base}/trips/${encodeURIComponent(tripId)}/summary`, this.getAuthHeaders())
     );
   }
-  
-    // Zaproszenia do wyjazdów - lista przychodzących zaproszeń
+
+  // Zaproszenia do wyjazdów - lista przychodzących zaproszeń
   getTripInvites(): Observable<TripInvite[]> {
     return this.handleAuthError(
       this.http.get<TripInvite[]>(`${this.base}/trips/invites`, this.getAuthHeaders())
+    );
+  }
+
+  // Wysłanie zaproszenia do wyjazdu (trip)
+  inviteUserToTrip(tripId: number, inviteeId: number): Observable<TripInvite> {
+    const payload = { inviteeId };
+    return this.handleAuthError(
+      this.http.post<TripInvite>(`${this.base}/trips/${tripId}/invites`, payload, this.getAuthHeaders())
     );
   }
 
@@ -233,5 +225,4 @@ export class ApiService {
       this.http.put<TripInvite>(`${this.base}/trips/invites/${inviteId}`, { status }, this.getAuthHeaders())
     );
   }
-
 }

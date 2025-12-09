@@ -22,8 +22,8 @@ interface Friend {
   id?: number;
   userId1?: number;
   userId2?: number;
-  user_id_1?: number;  // fallback dla snake_case
-  user_id_2?: number;  // fallback dla snake_case
+  user_id_1?: number;  // fallback for snake_case
+  user_id_2?: number;  // fallback for snake_case
   username?: string;
   email?: string;
   created_at?: string;
@@ -38,10 +38,10 @@ interface CurrentUser {
   isVerified: boolean;
 }
 
-// Walidator: dodatnia liczba całkowita w polu tekstowym
+// Custom validator: positive integer in a text field
 function positiveIntegerValidator(control: AbstractControl): ValidationErrors | null {
   if (!control.value) {
-    return null; // wymagane ogarnia osobny validator
+    return null; // "required" handled separately
   }
   const value = Number(control.value);
   if (isNaN(value) || value <= 0 || !Number.isInteger(value)) {
@@ -80,7 +80,7 @@ export class FriendsPageComponent implements OnInit {
 
   addFriendForm: FormGroup;
 
-  // Zaproszenia do wyjazdów (trips)
+  // Trip invites section
   tripInvites: TripInvite[] = [];
   loadingTripInvites = false;
 
@@ -91,13 +91,13 @@ export class FriendsPageComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    // Najpierw pobieramy zalogowanego usera (żeby znać jego ID)
+    // First load the current user so we know their ID
     this.api.getMe().subscribe({
       next: (user) => {
         this.currentUser = user;
         this.loadFriends();
         this.loadFriendRequests();
-        this.loadTripInvites(); // nowa sekcja – pobieramy zaproszenia do tripów
+        this.loadTripInvites();
       },
       error: (e) => {
         console.error('Failed to get current user', e);
@@ -108,7 +108,7 @@ export class FriendsPageComponent implements OnInit {
 
   // ---------- FRIENDS ----------
 
-  // Pobranie listy znajomych (tylko zaakceptowane relacje)
+  // Load accepted friends list
   loadFriends(): void {
     this.loading = true;
     this.error = null;
@@ -126,7 +126,7 @@ export class FriendsPageComponent implements OnInit {
     });
   }
 
-  // Pobranie przychodzących zaproszeń do znajomych
+  // Load incoming friend requests
   loadFriendRequests(): void {
     this.api.getFriendRequests().subscribe({
       next: (requests) => {
@@ -138,7 +138,7 @@ export class FriendsPageComponent implements OnInit {
     });
   }
 
-  // Wysłanie zaproszenia do znajomych po ID usera
+  // Send a friend request by user ID
   addFriend(): void {
     if (this.addFriendForm.invalid) {
       this.addFriendForm.markAllAsTouched();
@@ -147,7 +147,7 @@ export class FriendsPageComponent implements OnInit {
 
     const friendId = Number(this.addFriendForm.get('userId')?.value);
 
-    // Sprawdzamy czy już nie mamy takiego znajomego
+    // Check if we already have this friend
     if (this.friends.some(f =>
       (f.userId1 === friendId || f.userId2 === friendId) ||
       (f.user_id_1 === friendId || f.user_id_2 === friendId)
@@ -172,7 +172,7 @@ export class FriendsPageComponent implements OnInit {
         console.error('Failed to add friend', e);
         let errorMsg = 'Failed to add friend';
 
-        // Obsługa błędów walidacji z FastAPI / Pydantic
+        // Handle validation errors from FastAPI / Pydantic
         if (Array.isArray(e?.error?.detail)) {
           const firstError = e.error.detail[0];
           if (firstError?.msg) {
@@ -193,7 +193,7 @@ export class FriendsPageComponent implements OnInit {
     });
   }
 
-  // Akceptacja zaproszenia do znajomych
+  // Accept a friend request
   acceptFriendRequest(request: Friend): void {
     if (!request.id) {
       this.error = 'Error: Missing request id';
@@ -222,7 +222,7 @@ export class FriendsPageComponent implements OnInit {
     });
   }
 
-  // Odrzucenie zaproszenia do znajomych
+  // Decline a friend request
   declineFriendRequest(request: Friend): void {
     const friendId = this.getOtherFriendId(request);
     if (friendId === 0) {
@@ -251,7 +251,7 @@ export class FriendsPageComponent implements OnInit {
     });
   }
 
-  // Usunięcie znajomego
+  // Remove an existing friend
   removeFriend(friend: Friend): void {
     let friendId = this.getOtherFriendId(friend);
 
@@ -294,8 +294,8 @@ export class FriendsPageComponent implements OnInit {
   // ---------- TRIP INVITES ----------
 
   /**
-   * Pobiera listę przychodzących zaproszeń do tripów.
-   * Backend zwraca tylko "pending", ale dodatkowo filtrujemy po statusie.
+   * Load incoming trip invites for the current user.
+   * Backend already returns only "pending" invites.
    */
   loadTripInvites(): void {
     this.loadingTripInvites = true;
@@ -305,15 +305,15 @@ export class FriendsPageComponent implements OnInit {
         this.loadingTripInvites = false;
       },
       error: (e) => {
-        console.error('Nie udało się pobrać zaproszeń do wyjazdów', e);
+        console.error('Failed to load trip invites', e);
         this.loadingTripInvites = false;
       }
     });
   }
 
   /**
-   * Odpowiedź na zaproszenie do tripa.
-   * Po "accepted" backend dopisuje nas do Participants.
+   * Respond to a trip invite (accept or decline).
+   * When accepted, backend adds the user as a participant.
    */
   respondToTripInvite(invite: TripInvite, action: 'accepted' | 'declined'): void {
     if (invite.status !== 'pending') {
@@ -322,13 +322,13 @@ export class FriendsPageComponent implements OnInit {
 
     this.api.respondToTripInvite(invite.id, action).subscribe({
       next: (updated) => {
-        // Wywalamy z listy zaproszeń
+        // Remove invite from local list
         this.tripInvites = this.tripInvites.filter(i => i.id !== invite.id);
 
         if (action === 'accepted') {
-          this.successMessage = `Dołączyłeś do wyjazdu: ${updated.tripName || 'Trip #' + updated.tripId}`;
+          this.successMessage = `You joined the trip: ${updated.tripName || 'Trip #' + updated.tripId}`;
         } else {
-          this.successMessage = 'Zaproszenie do wyjazdu zostało odrzucone';
+          this.successMessage = 'Trip invite has been declined.';
         }
         this.error = null;
 
@@ -337,14 +337,14 @@ export class FriendsPageComponent implements OnInit {
         }, 3000);
       },
       error: (e) => {
-        console.error('Błąd przy odpowiadaniu na zaproszenie do wyjazdu', e);
-        this.error = e?.error?.detail || 'Nie udało się wysłać odpowiedzi na zaproszenie do wyjazdu';
+        console.error('Error while responding to trip invite', e);
+        this.error = e?.error?.detail || 'Could not send a response to the trip invite.';
         this.successMessage = null;
       }
     });
   }
 
-  // ---------- POMOCNICZE ----------
+  // ---------- HELPERS ----------
 
   getInitials(username: string | undefined): string {
     if (!username) return 'FR';
@@ -352,8 +352,8 @@ export class FriendsPageComponent implements OnInit {
   }
 
   /**
-   * Zwraca ID "drugiego" użytkownika w relacji znajomych
-   * (nie aktualnie zalogowanego).
+   * Returns the ID of the "other" user in a friendship
+   * (not the currently logged-in user).
    */
   getOtherFriendId(friend: Friend): number {
     if (!this.currentUser) {

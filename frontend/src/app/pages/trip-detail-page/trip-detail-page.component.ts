@@ -12,6 +12,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { forkJoin } from 'rxjs';
 
 import { ApiService } from '../../core/services/api.service';
 import { GetTrip } from '../../core/models/trip.model';
@@ -45,7 +46,7 @@ export class TripDetailPageComponent implements OnInit {
   private fb = inject(FormBuilder);
   private auth = inject(AuthService);
 
-  // Trip + gotowa etykieta dat
+  // Trip + formatted date label for the header
   trip: (GetTrip & { dates: string }) | null = null;
   expenses: Expense[] = [];
   loading = true;
@@ -54,6 +55,7 @@ export class TripDetailPageComponent implements OnInit {
 
   currentUser = this.auth.getCurrentUser();
 
+  // Expense form
   expenseForm = this.fb.group({
     name: ['', [Validators.required, Validators.minLength(2)]],
     description: [''],
@@ -62,6 +64,20 @@ export class TripDetailPageComponent implements OnInit {
     isScanned: [false],
     isEvenDivision: [true]
   });
+
+  // Invite-friends UI state
+  inviteForm = this.fb.group({
+    // manual user id, optional – user can also just pick from the list
+    friendId: ['']
+  });
+
+  friendsForInvite: Array<{ id: number; label: string }> = [];
+  selectedInviteFriendIds: number[] = [];
+  friendsInviteLoading = false;
+  friendsInviteError: string | null = null;
+  showInvitePanel = false;
+  inviteSuccessMessage: string | null = null;
+  inviteErrorMessage: string | null = null;
 
   ngOnInit() {
     const tripId = this.route.snapshot.paramMap.get('id');
@@ -74,7 +90,7 @@ export class TripDetailPageComponent implements OnInit {
   }
 
   /**
-   * Fallback – formatowanie createdAt do "dd.MM.yyyy"
+   * Fallback – format ISO string to "dd.MM.yyyy"
    */
   private formatDateFromIso(isoDateString: string): string {
     try {
@@ -90,9 +106,8 @@ export class TripDetailPageComponent implements OnInit {
   }
 
   /**
-   * Wyciąga etykietę dat z opisu tripa.
-   * Szuka dat w formacie dd.MM.yyyy w polu description.
-   * Jeżeli nic nie znajdzie – używa daty utworzenia.
+   * Try to extract dates (dd.MM.yyyy) from description;
+   * if nothing is found, fall back to createdAt.
    */
   private buildDatesLabel(trip: GetTrip): string {
     const desc = trip.description || '';
@@ -123,6 +138,7 @@ export class TripDetailPageComponent implements OnInit {
           dates: this.buildDatesLabel(trip)
         };
         this.loadExpenses(tripId);
+        this.loadFriendsForInvite();
       },
       error: (e) => {
         console.error('Failed to load trip', e);
@@ -142,6 +158,127 @@ export class TripDetailPageComponent implements OnInit {
         console.error('Failed to load expenses', e);
         this.expenses = [];
         this.loading = false;
+      }
+    });
+  }
+
+  /**
+   * Load friends that can be invited to this trip (accepted friends
+   * that are not already in participants list).
+   */
+  loadFriendsForInvite() {
+    if (!this.trip) {
+      return;
+    }
+
+    this.friendsInviteLoading = true;
+    this.friendsInviteError = null;
+
+    this.api.getFriends().subscribe({
+      next: (list: any[]) => {
+        const meId = this.currentUser?.id;
+        const accepted = (list || []).filter(f => f.isAccepted);
+
+        const participantIds = this.trip?.participants || [];
+
+        this.friendsForInvite = accepted
+          .map(f => {
+            // support both camelCase and snake_case from backend
+            const userId1 = f.userId1 ?? f.user_id_1;
+            const userId2 = f.userId2 ?? f.user_id_2;
+
+            let friendId: number;
+            if (meId && userId1 === meId) {
+              friendId = userId2;
+            } else if (meId && userId2 === meId) {
+              friendId = userId1;
+            } else {
+              friendId = userId2 ?? userId1;
+            }
+
+            const label = f.friendUsername || f.username || `User #${friendId}`;
+            return { id: friendId, label };
+          })
+          // do not show users who are already participants
+          .filter(f => !participantIds.includes(f.id));
+
+        this.friendsInviteLoading = false;
+      },
+      error: (e) => {
+        console.error('Failed to load friends for invites', e);
+        this.friendsInviteLoading = false;
+        this.friendsInviteError = 'Failed to load friends list';
+      }
+    });
+  }
+
+  toggleInvitePanel() {
+    this.showInvitePanel = !this.showInvitePanel;
+  }
+
+  toggleInviteFriend(friendId: number) {
+    if (this.selectedInviteFriendIds.includes(friendId)) {
+      this.selectedInviteFriendIds = this.selectedInviteFriendIds.filter(id => id !== friendId);
+    } else {
+      this.selectedInviteFriendIds = [...this.selectedInviteFriendIds, friendId];
+    }
+  }
+
+  /**
+   * Send invites based on:
+   *  - selected friends from the list
+   *  - optional manually typed Friend ID
+   */
+  sendInvites() {
+    if (!this.trip) return;
+
+    this.inviteErrorMessage = null;
+    this.inviteSuccessMessage = null;
+
+    const ids = new Set<number>(this.selectedInviteFriendIds);
+
+    const raw = this.inviteForm.get('friendId')?.value;
+    if (raw !== null && raw !== undefined && raw !== '') {
+      const parsed = Number(raw);
+      if (isNaN(parsed) || parsed <= 0) {
+        this.inviteErrorMessage = 'Friend ID must be a positive number.';
+        return;
+      }
+      ids.add(parsed);
+    }
+
+    if (!ids.size) {
+      this.inviteErrorMessage = 'Select at least one friend or enter a Friend ID.';
+      return;
+    }
+
+    const participantIds = this.trip.participants || [];
+    const finalIds = Array.from(ids).filter(id => !participantIds.includes(id));
+
+    if (!finalIds.length) {
+      this.inviteErrorMessage = 'All selected users are already participants of this trip.';
+      return;
+    }
+
+    const requests = finalIds.map(userId =>
+      this.api.inviteUserToTrip(this.trip!.id, userId)
+    );
+
+    forkJoin(requests).subscribe({
+      next: () => {
+        this.inviteSuccessMessage = 'Invitations have been sent.';
+        this.inviteForm.reset();
+        this.selectedInviteFriendIds = [];
+        // reload trip to refresh participants counter
+        this.loadTripDetails(String(this.trip!.id));
+      },
+      error: (e) => {
+        console.error('Failed to send invites', e);
+        const detail = e?.error?.detail;
+        this.inviteErrorMessage =
+          typeof detail === 'string'
+            ? detail
+            : 'Failed to send one or more invites.';
       }
     });
   }
@@ -194,8 +331,8 @@ export class TripDetailPageComponent implements OnInit {
 
     if (!this.trip) return;
 
-    // Backend nie ma endpointu delete – tylko komunikat
-    alert('Delete functionality not yet implemented on backend');
+    // Backend delete is not implemented yet – keep UI stub
+    alert('Delete functionality is not implemented on backend yet.');
   }
 
   editTrip() {
