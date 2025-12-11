@@ -12,7 +12,6 @@
 
 <section class="content">
   <div *ngIf="showCreate" class="create-panel">
-    <h3>{{ editingTripId ? 'Edit Trip' : 'Create a trip' }}</h3>
     <form [formGroup]="form" (ngSubmit)="createTrip()">
 
       <mat-form-field appearance="outline" class="full-width">

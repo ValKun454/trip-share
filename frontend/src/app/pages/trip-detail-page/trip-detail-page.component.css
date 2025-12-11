@@ -125,6 +125,164 @@
   margin-bottom: 16px;
 }
 
+/* Material form field styling */
+::ng-deep .trip-details .mat-mdc-text-field-wrapper {
+  background: rgba(255, 255, 255, 0.02) !important;
+  border-radius: 12px !important;
+}
+
+::ng-deep .trip-details .mdc-text-field {
+  background: transparent !important;
+  border-radius: 12px !important;
+}
+
+::ng-deep .trip-details .mdc-notched-outline .mdc-notched-outline__leading {
+  border-top-left-radius: 12px !important;
+  border-bottom-left-radius: 12px !important;
+  width: 12px !important;
+}
+
+::ng-deep .trip-details .mdc-notched-outline .mdc-notched-outline__trailing {
+  border-top-right-radius: 12px !important;
+  border-bottom-right-radius: 12px !important;
+}
+
+::ng-deep .trip-details .mdc-notched-outline .mdc-notched-outline__notch {
+  border-radius: 0 !important;
+}
+
+::ng-deep .trip-details .mat-mdc-form-field-infix {
+  padding-left: 4px !important;
+  padding-right: 4px !important;
+}
+
+::ng-deep .trip-details .mdc-floating-label {
+  text-transform: uppercase;
+  font-size: 0.75rem;
+}
+
+::ng-deep .trip-details .mat-mdc-form-field-focus-overlay {
+  background: transparent !important;
+  opacity: 0 !important;
+  display: none !important;
+}
+
+::ng-deep .trip-details .mat-mdc-line-ripple {
+  display: none !important;
+}
+
+::ng-deep .trip-details .mat-mdc-form-field-ripple {
+  display: none !important;
+}
+
+::ng-deep .trip-details .mdc-line-ripple {
+  display: none !important;
+}
+
+::ng-deep .trip-details .mdc-line-ripple::before,
+::ng-deep .trip-details .mdc-line-ripple::after {
+  display: none !important;
+}
+
+::ng-deep .trip-details .mat-mdc-form-field-focus-overlay::before {
+  display: none !important;
+}
+
+::ng-deep .trip-details .mat-mdc-text-field-wrapper::before,
+::ng-deep .trip-details .mat-mdc-text-field-wrapper::after {
+  display: none !important;
+}
+
+::ng-deep .trip-details .mat-mdc-form-field-state-layer {
+  display: none !important;
+}
+
+::ng-deep .trip-details .mdc-text-field__ripple {
+  display: none !important;
+}
+
+::ng-deep .trip-details .mdc-text-field__ripple::before,
+::ng-deep .trip-details .mdc-text-field__ripple::after {
+  display: none !important;
+}
+
+::ng-deep .trip-details .mat-mdc-form-field.mat-focused .mdc-notched-outline__leading,
+::ng-deep .trip-details .mat-mdc-form-field.mat-focused .mdc-notched-outline__notch,
+::ng-deep .trip-details .mat-mdc-form-field.mat-focused .mdc-notched-outline__trailing {
+  border-color: var(--primary) !important;
+}
+
+/* Fix card title padding */
+::ng-deep .add-expense .mat-mdc-card-title {
+  padding-left: 8px !important;
+}
+
+::ng-deep .trip-details .mat-mdc-form-field.mat-focused .mdc-notched-outline__leading,
+::ng-deep .trip-details .mat-mdc-form-field.mat-focused .mdc-notched-outline__notch,
+::ng-deep .trip-details .mat-mdc-form-field.mat-focused .mdc-notched-outline__trailing {
+  border-color: var(--primary) !important;
+  border-width: 2px !important;
+}
+
+::ng-deep .trip-details .mat-mdc-form-field.mat-focused .mdc-text-field {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 30%, transparent) !important;
+}
+
+::ng-deep .trip-details .mat-mdc-form-field:hover .mdc-notched-outline__leading,
+::ng-deep .trip-details .mat-mdc-form-field:hover .mdc-notched-outline__notch,
+::ng-deep .trip-details .mat-mdc-form-field:hover .mdc-notched-outline__trailing {
+  border-color: color-mix(in srgb, var(--primary) 50%, var(--outline)) !important;
+}
+
+::ng-deep .trip-details .mat-mdc-input-element {
+  color: var(--text) !important;
+  caret-color: var(--primary) !important;
+  font-size: 0.9rem !important;
+}
+
+::ng-deep .trip-details .mat-mdc-input-element::placeholder {
+  color: var(--muted) !important;
+  opacity: 0.6;
+}
+
+::ng-deep .trip-details .mat-mdc-floating-label,
+::ng-deep .trip-details .mdc-floating-label {
+  color: var(--muted) !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.03em !important;
+  text-transform: uppercase !important;
+}
+
+::ng-deep .trip-details .mat-mdc-form-field.mat-focused .mat-mdc-floating-label,
+::ng-deep .trip-details .mat-mdc-form-field.mat-focused .mdc-floating-label {
+  color: var(--primary) !important;
+}
+
+::ng-deep .trip-details .mat-mdc-form-field-hint {
+  color: var(--muted) !important;
+  font-size: 0.7rem !important;
+}
+
+::ng-deep .trip-details .mat-mdc-form-field .mat-icon,
+::ng-deep .trip-details .mat-mdc-form-field .mat-mdc-icon-button .mat-icon {
+  color: var(--muted) !important;
+}
+
+::ng-deep .trip-details .mat-mdc-form-field.mat-focused .mat-icon,
+::ng-deep .trip-details .mat-mdc-form-field.mat-focused .mat-mdc-icon-button .mat-icon {
+  color: var(--primary) !important;
+}
+
+::ng-deep .trip-details .mat-mdc-form-field-error {
+  color: #ef4444 !important;
+  font-size: 0.7rem !important;
+}
+
+::ng-deep .trip-details textarea.mat-mdc-input-element {
+  padding: 8px 0 !important;
+}
+
 /* ERROR MESSAGES INSIDE ADD EXPENSE FORM */
 .add-expense mat-error {
   margin-left: -15px;

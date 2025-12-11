@@ -55,9 +55,6 @@
     <mat-card class="invite-card">
       <mat-card-header>
         <mat-card-title>Invite friends</mat-card-title>
-        <mat-card-subtitle>
-          Friends must already be in your friends list.
-        </mat-card-subtitle>
       </mat-card-header>
 
       <mat-card-content>
@@ -136,7 +133,6 @@
 
     <!-- Add Expense Form -->
     <mat-card class="add-expense" *ngIf="showAddExpense">
-      <mat-card-title>{{ editingExpense ? 'Edit Expense' : 'Add New Expense' }}</mat-card-title>
       <mat-card-content>
         <form [formGroup]="expenseForm" (ngSubmit)="editingExpense ? saveExpense() : addExpense()">
           <mat-form-field appearance="outline" class="full-width">
