@@ -425,3 +425,83 @@
     min-width: 70px;
   }
 }
+
+/* Friends dropdown styles */
+.friends-dropdown {
+  margin-top: 0;
+  transition: margin-bottom 0.2s ease;
+}
+
+.invite-card.dropdown-open .friends-dropdown {
+  margin-bottom: 250px;
+}
+
+.friends-dropdown .mat-mdc-form-field {
+  margin-bottom: 0;
+}
+
+.invite-actions {
+  margin-top: 16px;
+}
+
+.dropdown-friend-avatar {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--primary) 15%, transparent);
+  text-align: center;
+  line-height: 24px;
+  font-weight: 600;
+  color: var(--primary);
+  font-size: 12px;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+::ng-deep .friends-select-panel {
+  background: var(--surface-high) !important;
+  border: 1px solid var(--outline) !important;
+  border-radius: 12px !important;
+  max-height: 240px !important;
+}
+
+::ng-deep .friends-select-panel .mat-mdc-option {
+  color: var(--text) !important;
+}
+
+::ng-deep .friends-select-panel .mat-mdc-option:hover {
+  background: color-mix(in srgb, var(--primary) 10%, transparent) !important;
+}
+
+::ng-deep .friends-select-panel .mat-mdc-option.mat-mdc-option-active {
+  background: color-mix(in srgb, var(--primary) 15%, transparent) !important;
+}
+
+::ng-deep .friends-select-panel .mat-pseudo-checkbox {
+  color: var(--primary) !important;
+}
+
+::ng-deep .friends-select-panel .mat-pseudo-checkbox-checked {
+  background: var(--primary) !important;
+}
+
+::ng-deep .trip-details .mat-mdc-option {
+  color: var(--text) !important;
+}
+
+::ng-deep .trip-details .mat-mdc-option:hover {
+  background: color-mix(in srgb, var(--primary) 10%, transparent) !important;
+}
+
+::ng-deep .trip-details .mat-mdc-option.mat-mdc-option-active {
+  background: color-mix(in srgb, var(--primary) 15%, transparent) !important;
+}
+
+::ng-deep .trip-details .mat-pseudo-checkbox {
+  color: var(--primary) !important;
+}
+
+::ng-deep .trip-details .mat-pseudo-checkbox-checked {
+  background: var(--primary) !important;
+}

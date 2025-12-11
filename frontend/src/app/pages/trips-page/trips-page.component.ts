@@ -11,6 +11,7 @@ import { MatFormFieldModule } from "@angular/material/form-field";
 import { MatDatepickerModule } from "@angular/material/datepicker";
 import { MatNativeDateModule, MAT_DATE_FORMATS, MAT_DATE_LOCALE, DateAdapter } from "@angular/material/core";
 import { MatTooltipModule } from "@angular/material/tooltip";
+import { MatSelectModule, MatSelectChange } from "@angular/material/select";
 import { RouterModule } from "@angular/router";
 import { forkJoin } from "rxjs";
 import { ApiService } from "../../core/services/api.service";
@@ -67,6 +68,7 @@ function startBeforeEnd(): ValidatorFn {
     MatDatepickerModule,
     MatNativeDateModule,
     MatTooltipModule,
+    MatSelectModule,
     RouterModule
   ],
   templateUrl: "./trips-page.component.html",
@@ -227,6 +229,21 @@ export class TripsPageComponent implements OnInit {
       this.selectedFriendIds = this.selectedFriendIds.filter(id => id !== friendId);
     } else {
       this.selectedFriendIds = [...this.selectedFriendIds, friendId];
+    }
+  }
+
+  onFriendSelectionChange(selectedIds: number[]) {
+    this.selectedFriendIds = selectedIds;
+  }
+
+  onDropdownOpenChange(isOpen: boolean) {
+    const createPanel = document.querySelector('.create-panel');
+    if (createPanel) {
+      if (isOpen) {
+        createPanel.classList.add('dropdown-open');
+      } else {
+        createPanel.classList.remove('dropdown-open');
+      }
     }
   }
 

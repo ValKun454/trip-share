@@ -12,6 +12,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatSelectModule, MatSelectChange } from '@angular/material/select';
 import { forkJoin } from 'rxjs';
 
 import { ApiService } from '../../core/services/api.service';
@@ -34,7 +35,8 @@ import { AuthService } from '../../core/services/auth.service';
     MatToolbarModule,
     MatCheckboxModule,
     MatDividerModule,
-    MatTooltipModule
+    MatTooltipModule,
+    MatSelectModule
   ],
   templateUrl: './trip-detail-page.component.html',
   styleUrls: ['./trip-detail-page.component.css']
@@ -222,6 +224,22 @@ export class TripDetailPageComponent implements OnInit {
       this.selectedInviteFriendIds = this.selectedInviteFriendIds.filter(id => id !== friendId);
     } else {
       this.selectedInviteFriendIds = [...this.selectedInviteFriendIds, friendId];
+    }
+  }
+
+  onFriendSelectionChange(selectedIds: number[]) {
+    this.selectedInviteFriendIds = selectedIds;
+  }
+
+  onDropdownOpenChange(isOpen: boolean) {
+    // Add class to body or container when dropdown opens
+    const inviteCard = document.querySelector('.invite-card');
+    if (inviteCard) {
+      if (isOpen) {
+        inviteCard.classList.add('dropdown-open');
+      } else {
+        inviteCard.classList.remove('dropdown-open');
+      }
     }
   }
 

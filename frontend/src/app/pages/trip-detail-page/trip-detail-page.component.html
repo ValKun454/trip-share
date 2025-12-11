@@ -58,34 +58,8 @@
       </mat-card-header>
 
       <mat-card-content>
-        <!-- manual ID + actions -->
         <form [formGroup]="inviteForm" (ngSubmit)="sendInvites()">
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Friend User ID (optional)</mat-label>
-            <input matInput formControlName="friendId" type="number" min="1" />
-            <mat-hint>Use this if you want to type an ID manually.</mat-hint>
-          </mat-form-field>
-
-          <div class="invite-actions">
-            <button mat-stroked-button type="button" (click)="toggleInvitePanel()">
-              <mat-icon>group_add</mat-icon>
-              Add friends
-            </button>
-            <span class="chips-info" *ngIf="friendsForInvite.length">
-              Selected: {{ selectedInviteFriendIds.length }}
-            </span>
-            <span class="chips-info" *ngIf="!friendsForInvite.length && !friendsInviteLoading">
-              You have no friends available to invite.
-            </span>
-            <span class="spacer"></span>
-            <button mat-flat-button color="accent" type="submit">
-              Send invite
-            </button>
-          </div>
-        </form>
-
-        <!-- friends picker panel -->
-        <div class="friends-picker" *ngIf="showInvitePanel">
+          <!-- friends dropdown (always visible) -->
           <div *ngIf="friendsInviteLoading" class="friends-loading">
             Loading friends...
           </div>
@@ -95,20 +69,22 @@
 
           <div
             *ngIf="!friendsInviteLoading && !friendsInviteError && friendsForInvite.length"
-            class="friends-list"
+            class="friends-dropdown"
           >
-            <button
-              type="button"
-              mat-stroked-button
-              class="friend-chip"
-              *ngFor="let f of friendsForInvite"
-              [class.friend-chip-selected]="selectedInviteFriendIds.includes(f.id)"
-              (click)="toggleInviteFriend(f.id)"
-            >
-              <span class="friend-avatar">{{ f.label.charAt(0) }}</span>
-              <span class="friend-name">{{ f.label }}</span>
-              <mat-icon *ngIf="selectedInviteFriendIds.includes(f.id)">check</mat-icon>
-            </button>
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>SELECT FRIENDS</mat-label>
+              <mat-select 
+                [value]="selectedInviteFriendIds" 
+                (selectionChange)="onFriendSelectionChange($event.value)"
+                (openedChange)="onDropdownOpenChange($event)"
+                panelClass="friends-select-panel"
+                multiple>
+                <mat-option *ngFor="let f of friendsForInvite" [value]="f.id">
+                  <span class="dropdown-friend-avatar">{{ f.label.charAt(0) }}</span>
+                  {{ f.label }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
           </div>
 
           <div
@@ -117,7 +93,13 @@
           >
             All of your friends are already in this trip.
           </div>
-        </div>
+
+          <div class="invite-actions">
+            <button mat-flat-button color="accent" type="submit">
+              Send invite
+            </button>
+          </div>
+        </form>
 
         <!-- invite messages -->
         <div class="success-message" *ngIf="inviteSuccessMessage">
