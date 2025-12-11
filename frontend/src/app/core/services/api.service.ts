@@ -174,16 +174,21 @@ export class ApiService {
   }
 
   /**
-   * Create expense
+   * Create expense - uses camelCase Pydantic aliases
    */
-  createExpense(tripId: number, exp: ExpenseCreate): Observable<Expense> {
+  createExpense(tripId: number, exp: ExpenseCreate, participantIds: number[]): Observable<Expense> {
     const payload = {
       isScanned: exp.isScanned,
       name: exp.name,
       description: exp.description || '',
       payerId: exp.payerId,
       isEvenDivision: exp.isEvenDivision,
-      totalCost: exp.totalCost
+      totalCost: exp.totalCost,
+      participantShares: participantIds.map(userId => ({
+        userId: userId,
+        isPaying: true,
+        amount: 0 // Will be calculated by backend when isEvenDivision=true
+      }))
     };
     return this.handleAuthError(
       this.http.post<Expense>(`${this.base}/trips/${tripId}/expenses`, payload, this.getAuthHeaders())

@@ -314,7 +314,10 @@ export class TripDetailPageComponent implements OnInit {
       totalCost: Number(formValue.totalCost) || 0
     };
 
-    this.api.createExpense(tripId, payload).subscribe({
+    // Pass trip participants for participantShares
+    const participantIds = this.trip.participants || [];
+
+    this.api.createExpense(tripId, payload, participantIds).subscribe({
       next: () => {
         this.toggleAddExpense();
         this.loadExpenses(String(tripId));
