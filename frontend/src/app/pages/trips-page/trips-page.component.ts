@@ -362,17 +362,15 @@ export class TripsPageComponent implements OnInit {
   }
 
   loadSummary(tripId: string) {
-    if (!this.api.getTripSummary) {
-      this.summaries[tripId] = '—';
-      return;
-    }
-    this.api.getTripSummary(tripId).subscribe({
-      next: (res) => {
-        if (!res) { this.summaries[tripId] = '—'; return; }
-        if (typeof res === 'string') this.summaries[tripId] = res;
-        else if (res.summary) this.summaries[tripId] = res.summary;
-        else if (res.total) this.summaries[tripId] = String(res.total);
-        else this.summaries[tripId] = JSON.stringify(res);
+    this.api.getExpenses(Number(tripId)).subscribe({
+      next: (expenses) => {
+        if (!expenses || expenses.length === 0) {
+          this.summaries[tripId] = '0.00 zł';
+          return;
+        }
+        // Calculate total of all expenses
+        const total = expenses.reduce((sum, exp) => sum + Number(exp.totalCost || 0), 0);
+        this.summaries[tripId] = `${total.toFixed(2)} zł`;
       },
       error: () => {
         this.summaries[tripId] = 'N/A';
