@@ -52,6 +52,7 @@ export class TripDetailPageComponent implements OnInit {
   loading = true;
   error: string | null = null;
   showAddExpense = false;
+  editingExpense: Expense | null = null;
 
   currentUser = this.auth.getCurrentUser();
 
@@ -285,6 +286,7 @@ export class TripDetailPageComponent implements OnInit {
 
   toggleAddExpense() {
     this.showAddExpense = !this.showAddExpense;
+    this.editingExpense = null; // Clear editing mode
     if (!this.showAddExpense) {
       this.expenseForm.reset({
         payerId: this.currentUser?.id,
@@ -324,6 +326,53 @@ export class TripDetailPageComponent implements OnInit {
     });
   }
 
+  editExpense(expense: Expense) {
+    this.editingExpense = expense;
+    this.showAddExpense = true;
+    
+    // Pre-populate form with expense data
+    this.expenseForm.patchValue({
+      name: expense.name,
+      description: expense.description || '',
+      totalCost: String(expense.totalCost),
+      payerId: expense.payerId,
+      isScanned: expense.isScanned,
+      isEvenDivision: expense.isEvenDivision
+    });
+  }
+
+  saveExpense() {
+    if (!this.expenseForm.valid || !this.trip || !this.editingExpense) {
+      this.expenseForm.markAllAsTouched();
+      return;
+    }
+
+    const tripId = this.trip.id;
+    const expenseId = this.editingExpense.id;
+    const formValue = this.expenseForm.value;
+
+    const payload = {
+      isScanned: formValue.isScanned || false,
+      name: formValue.name || '',
+      description: formValue.description || '',
+      payerId: Number(formValue.payerId) || 0,
+      isEvenDivision: formValue.isEvenDivision || true,
+      totalCost: Number(formValue.totalCost) || 0
+    };
+
+    this.api.updateExpense(tripId, expenseId, payload).subscribe({
+      next: () => {
+        this.editingExpense = null;
+        this.toggleAddExpense();
+        this.loadExpenses(String(tripId));
+      },
+      error: (e) => {
+        console.error('Failed to update expense', e);
+        this.error = e?.error?.detail || 'Failed to update expense';
+      }
+    });
+  }
+
   deleteExpense(expenseId: number) {
     if (!confirm('Are you sure you want to delete this expense?')) {
       return;
@@ -331,8 +380,16 @@ export class TripDetailPageComponent implements OnInit {
 
     if (!this.trip) return;
 
-    // Backend delete is not implemented yet – keep UI stub
-    alert('Delete functionality is not implemented on backend yet.');
+    this.api.deleteExpense(this.trip.id, expenseId).subscribe({
+      next: () => {
+        console.log('Expense deleted successfully');
+        this.loadExpenses(String(this.trip!.id));
+      },
+      error: (e) => {
+        console.error('Delete expense failed', e);
+        this.error = e?.error?.detail || 'Failed to delete expense';
+      }
+    });
   }
 
   editTrip() {

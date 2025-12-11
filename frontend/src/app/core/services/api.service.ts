@@ -190,6 +190,33 @@ export class ApiService {
     );
   }
 
+  /**
+   * Update expense - uses camelCase Pydantic aliases
+   * All fields are optional
+   */
+  updateExpense(tripId: number, expenseId: number, data: Partial<ExpenseCreate>): Observable<Expense> {
+    const payload: any = {};
+    if (data.isScanned !== undefined) payload.isScanned = data.isScanned;
+    if (data.name !== undefined) payload.name = data.name;
+    if (data.description !== undefined) payload.description = data.description;
+    if (data.payerId !== undefined) payload.payerId = data.payerId;
+    if (data.isEvenDivision !== undefined) payload.isEvenDivision = data.isEvenDivision;
+    if (data.totalCost !== undefined) payload.totalCost = data.totalCost;
+    
+    return this.handleAuthError(
+      this.http.put<Expense>(`${this.base}/trips/${tripId}/expenses/${expenseId}`, payload, this.getAuthHeaders())
+    );
+  }
+
+  /**
+   * Delete expense
+   */
+  deleteExpense(tripId: number, expenseId: number): Observable<void> {
+    return this.handleAuthError(
+      this.http.delete<void>(`${this.base}/trips/${tripId}/expenses/${expenseId}`, this.getAuthHeaders())
+    );
+  }
+
   // identyfikujemy usera po UID
   getDebtsSummaryByUid(uid: string): Observable<DebtsSummary> {
     return this.handleAuthError(

@@ -26,3 +26,15 @@ export interface ExpenseCreate {
   isEvenDivision: boolean;
   totalCost: number | string;
 }
+
+/**
+ * DTO for updating an expense - all fields are optional
+ */
+export interface ExpenseUpdate {
+  isScanned?: boolean;
+  name?: string;
+  description?: string;
+  payerId?: number;
+  isEvenDivision?: boolean;
+  totalCost?: number | string;
+}

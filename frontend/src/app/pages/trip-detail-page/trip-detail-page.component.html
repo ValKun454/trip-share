@@ -136,9 +136,9 @@
 
     <!-- Add Expense Form -->
     <mat-card class="add-expense" *ngIf="showAddExpense">
-      <mat-card-title>Add New Expense</mat-card-title>
+      <mat-card-title>{{ editingExpense ? 'Edit Expense' : 'Add New Expense' }}</mat-card-title>
       <mat-card-content>
-        <form [formGroup]="expenseForm" (ngSubmit)="addExpense()">
+        <form [formGroup]="expenseForm" (ngSubmit)="editingExpense ? saveExpense() : addExpense()">
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>Expense Name</mat-label>
             <input matInput formControlName="name" />
@@ -182,7 +182,7 @@
           <div class="form-actions">
             <button mat-stroked-button type="button" (click)="toggleAddExpense()">Cancel</button>
             <button mat-flat-button color="primary" type="submit" [disabled]="expenseForm.invalid">
-              Add Expense
+              {{ editingExpense ? 'Update Expense' : 'Add Expense' }}
             </button>
           </div>
         </form>
@@ -230,10 +230,18 @@
         <mat-card-actions align="end">
           <button
             mat-icon-button
+            aria-label="edit"
+            (click)="editExpense(exp)"
+            matTooltip="Edit expense"
+          >
+            <mat-icon>edit</mat-icon>
+          </button>
+          <button
+            mat-icon-button
+            color="warn"
             aria-label="delete"
             (click)="deleteExpense(exp.id)"
-            disabled
-            title="Delete not yet implemented"
+            matTooltip="Delete expense"
           >
             <mat-icon>delete</mat-icon>
           </button>
