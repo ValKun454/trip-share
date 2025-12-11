@@ -198,36 +198,16 @@
         <p>No expenses yet. Add your first expense!</p>
       </div>
 
-      <mat-card *ngFor="let exp of expenses" class="expense-card">
-        <mat-card-header>
-          <div mat-card-avatar class="expense-avatar">{{ exp.name.charAt(0).toUpperCase() }}</div>
-          <mat-card-title>{{ exp.name }}</mat-card-title>
-          <mat-card-subtitle>
-            <span *ngIf="exp.isScanned" class="badge receipt">📸 Scanned</span>
-            <span *ngIf="exp.isEvenDivision" class="badge split">↔️ Split Evenly</span>
-          </mat-card-subtitle>
-        </mat-card-header>
-
-        <mat-card-content>
-          <div class="expense-row">
-            <span class="label">Amount:</span>
-            <span class="value amount">{{ formatCurrency(exp.totalCost) }}</span>
-          </div>
-          <div class="expense-row">
-            <span class="label">Paid by:</span>
-            <span class="value">User #{{ exp.payerId }}</span>
-          </div>
-          <div class="expense-row" *ngIf="exp.description">
-            <span class="label">Note:</span>
-            <span class="value">{{ exp.description }}</span>
-          </div>
-          <div class="expense-row">
-            <span class="label">Date:</span>
-            <span class="value">{{ exp.createdAt | date: 'short' }}</span>
-          </div>
-        </mat-card-content>
-
-        <mat-card-actions align="end">
+      <div *ngFor="let exp of expenses" class="expense-card">
+        <div class="expense-avatar">{{ exp.name.charAt(0).toUpperCase() }}</div>
+        <div class="expense-name">
+          {{ exp.name }}
+          <span *ngIf="exp.isScanned" class="badge">📸</span>
+        </div>
+        <div class="expense-amount">{{ formatCurrency(exp.totalCost) }}</div>
+        <div class="expense-meta">User #{{ exp.payerId }}</div>
+        <div class="expense-meta">{{ exp.createdAt | date: 'M/d/yy, h:mm a' }}</div>
+        <div class="expense-actions">
           <button
             mat-icon-button
             aria-label="edit"
@@ -245,8 +225,8 @@
           >
             <mat-icon>delete</mat-icon>
           </button>
-        </mat-card-actions>
-      </mat-card>
+        </div>
+      </div>
     </div>
   </div>
 </section>

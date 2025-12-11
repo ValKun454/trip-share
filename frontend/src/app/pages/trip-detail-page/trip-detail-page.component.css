@@ -175,30 +175,29 @@
   opacity: 0.5;
 }
 
-/* Expense Card */
+/* Expense Card - One Line */
 .expense-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
   background: var(--surface-high);
   border: 1px solid var(--outline);
-  border-radius: 12px;
-  margin-bottom: 12px;
-  transition: all 0.3s ease;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  transition: all 0.2s ease;
+  min-height: 56px;
 }
 
 .expense-card:hover {
   border-color: var(--primary);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
-}
-
-.expense-card mat-card-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  transform: translateX(4px);
 }
 
 .expense-avatar {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   background: color-mix(in srgb, var(--primary) 15%, transparent);
   display: flex;
@@ -206,58 +205,46 @@
   justify-content: center;
   font-weight: 600;
   color: var(--primary);
-  font-size: 16px;
+  font-size: 14px;
   flex-shrink: 0;
 }
 
-.badge {
-  display: inline-block;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 0.7rem;
+.expense-name {
+  flex: 1;
   font-weight: 500;
-  margin-right: 8px;
-}
-
-.badge.receipt {
-  background: color-mix(in srgb, #10b981 10%, transparent);
-  color: #10b981;
-}
-
-.badge.split {
-  background: color-mix(in srgb, var(--primary) 10%, transparent);
-  color: var(--primary);
-}
-
-/* Expense Row */
-.expense-row {
+  font-size: 0.95rem;
+  color: var(--text);
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--outline);
-  font-size: 0.9rem;
+  gap: 8px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.expense-row:last-of-type {
-  border-bottom: none;
+.expense-amount {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--primary);
+  min-width: 80px;
+  text-align: right;
 }
 
-.expense-row .label {
-  font-weight: 600;
+.expense-meta {
+  font-size: 0.8rem;
   color: var(--muted);
-  min-width: 100px;
-  font-size: 0.75rem;
-  text-transform: uppercase;
+  min-width: 80px;
 }
 
-.expense-row .value {
-  color: var(--text);
-  flex: 1;
+.expense-actions {
+  display: flex;
+  gap: 4px;
+  margin-left: 8px;
 }
 
-.expense-row .amount {
-  font-weight: 600;
+.badge {
+  font-size: 0.9rem;
   color: var(--primary);
   font-size: 1.1rem;
 }
