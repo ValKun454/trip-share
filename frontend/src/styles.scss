@@ -45,15 +45,150 @@ body {
 h1,h2,h3,h4 { color: var(--text); }
 .mat-mdc-card-subtitle, .mat-mdc-list-item-title { color: var(--muted); }
 
+/* Modern Button Styles */
+.mat-mdc-button,
 .mat-mdc-unelevated-button,
 .mat-mdc-raised-button,
-.mat-mdc-fab {
+.mat-mdc-outlined-button,
+.mat-mdc-fab,
+.mat-mdc-mini-fab,
+.mat-mdc-icon-button {
+  border-radius: 24px !important;
+  font-weight: 600 !important;
+  text-transform: none !important;
+  letter-spacing: 0.02em !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* All text buttons get white border */
+.mat-mdc-button,
+.mat-mdc-unelevated-button,
+.mat-mdc-raised-button,
+.mat-mdc-outlined-button {
+  border: 1.5px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Filled/Raised Buttons (Primary Action) */
+.mat-mdc-unelevated-button,
+.mat-mdc-raised-button {
   --mdc-filled-button-container-color: var(--primary);
   --mdc-filled-button-label-text-color: #fff;
 }
+
+.mat-mdc-unelevated-button:hover,
+.mat-mdc-raised-button:hover {
+  border-color: rgba(255, 255, 255, 0.35) !important;
+  transform: translateY(-1px);
+}
+
+.mat-mdc-unelevated-button:active,
+.mat-mdc-raised-button:active {
+  transform: translateY(0);
+}
+
+/* Accent Buttons */
+.mat-mdc-unelevated-button.mat-accent,
+.mat-mdc-raised-button.mat-accent {
+  --mdc-filled-button-container-color: var(--primary);
+  --mdc-filled-button-label-text-color: #fff;
+}
+
+/* Outlined/Stroked Buttons (Secondary Action) */
 .mat-mdc-outlined-button {
-  --mdc-outlined-button-outline-color: color-mix(in srgb, var(--primary) 60%, transparent);
+  --mdc-outlined-button-outline-color: rgba(255, 255, 255, 0.2);
+  --mdc-outlined-button-label-text-color: var(--text);
+}
+
+.mat-mdc-outlined-button:hover {
+  border-color: rgba(255, 255, 255, 0.35) !important;
   --mdc-outlined-button-label-text-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 8%, transparent) !important;
+}
+
+.mat-mdc-outlined-button.mat-primary {
+  --mdc-outlined-button-outline-color: rgba(255, 255, 255, 0.25);
+  --mdc-outlined-button-label-text-color: var(--primary);
+}
+
+.mat-mdc-outlined-button.mat-primary:hover {
+  border-color: rgba(255, 255, 255, 0.4) !important;
+  background: color-mix(in srgb, var(--primary) 12%, transparent) !important;
+}
+
+.mat-mdc-outlined-button.mat-warn {
+  --mdc-outlined-button-outline-color: rgba(255, 255, 255, 0.25);
+  --mdc-outlined-button-label-text-color: #ef4444;
+}
+
+.mat-mdc-outlined-button.mat-warn:hover {
+  border-color: rgba(255, 255, 255, 0.4) !important;
+  background: color-mix(in srgb, #ef4444 8%, transparent) !important;
+}
+
+/* Text Buttons */
+.mat-mdc-button {
+  --mdc-text-button-label-text-color: var(--text);
+}
+
+.mat-mdc-button:hover {
+  border-color: rgba(255, 255, 255, 0.3) !important;
+  background: color-mix(in srgb, var(--primary) 8%, transparent) !important;
+}
+
+.mat-mdc-button.mat-primary {
+  --mdc-text-button-label-text-color: var(--primary);
+}
+
+.mat-mdc-button.mat-primary:hover {
+  border-color: rgba(255, 255, 255, 0.35) !important;
+  background: color-mix(in srgb, var(--primary) 12%, transparent) !important;
+}
+
+/* Icon Buttons */
+.mat-mdc-icon-button {
+  border-radius: 8px !important;
+}
+
+.mat-mdc-icon-button:hover {
+  background: color-mix(in srgb, var(--primary) 10%, transparent) !important;
+}
+
+.mat-mdc-icon-button.mat-primary {
+  color: var(--primary) !important;
+}
+
+.mat-mdc-icon-button.mat-warn {
+  color: #ef4444 !important;
+}
+
+/* FAB Buttons */
+.mat-mdc-fab,
+.mat-mdc-mini-fab {
+  border-radius: 16px !important;
+  --mdc-fab-container-color: var(--primary);
+}
+
+.mat-mdc-fab:hover,
+.mat-mdc-mini-fab:hover {
+  transform: translateY(-2px);
+}
+
+/* Disabled State */
+.mat-mdc-button:disabled,
+.mat-mdc-unelevated-button:disabled,
+.mat-mdc-raised-button:disabled,
+.mat-mdc-outlined-button:disabled,
+.mat-mdc-icon-button:disabled {
+  opacity: 0.4 !important;
+  cursor: not-allowed !important;
+}
+
+/* Remove ripple overlay */
+.mat-mdc-button .mat-mdc-button-persistent-ripple,
+.mat-mdc-unelevated-button .mat-mdc-button-persistent-ripple,
+.mat-mdc-raised-button .mat-mdc-button-persistent-ripple,
+.mat-mdc-outlined-button .mat-mdc-button-persistent-ripple {
+  opacity: 0 !important;
 }
 
 .mat-mdc-list-item.active {
