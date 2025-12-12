@@ -37,7 +37,10 @@ export class ExpensesSummaryPageComponent {
   loading = true;
   data: DebtsSummary = [];
 
-  ngOnInit() {
+  // userId -> display name (nickname); filled from current user + friends
+  private userNames: Record<number, string> = {};
+
+  ngOnInit(): void {
     const user = this.auth.getCurrentUser();
     const currentUserId = user?.id;
 
@@ -47,10 +50,29 @@ export class ExpensesSummaryPageComponent {
       return;
     }
 
+    if (user?.username) {
+      this.userNames[currentUserId] = user.username;
+    }
+
+    // First, best-effort load friends to map userId -> nickname
+    this.api.getFriends().subscribe({
+      next: (friends: any[]) => {
+        this.buildUserNameMapFromFriends(friends, currentUserId);
+        this.loadSummary(currentUserId);
+      },
+      error: () => {
+        // If friends endpoint fails, still show summary using IDs only
+        this.loadSummary(currentUserId);
+      },
+    });
+  }
+
+  private loadSummary(currentUserId: number): void {
+    this.loading = true;
+
     this.api
       .getTrips()
       .pipe(
-        // dla każdego tripu
         switchMap((trips: GetTrip[]) => {
           if (!trips.length) {
             return of<DebtsSummary>([]);
@@ -64,7 +86,6 @@ export class ExpensesSummaryPageComponent {
             ),
           );
 
-          // czekamy dopóki każdy request zostanie opracowany
           return forkJoin(perTrip$);
         }),
       )
@@ -80,13 +101,32 @@ export class ExpensesSummaryPageComponent {
       });
   }
 
+  private buildUserNameMapFromFriends(list: any[], currentUserId: number): void {
+    const accepted = (list || []).filter((f) => f.isAccepted);
+
+    accepted.forEach((f) => {
+      const userId1 = f.userId1 ?? f.user_id_1;
+      const userId2 = f.userId2 ?? f.user_id_2;
+
+      let friendId: number;
+      if (currentUserId && userId1 === currentUserId) {
+        friendId = userId2;
+      } else if (currentUserId && userId2 === currentUserId) {
+        friendId = userId1;
+      } else {
+        friendId = userId2 ?? userId1;
+      }
+
+      const label = f.friendUsername || f.username || `User ${friendId}`;
+      if (typeof friendId === 'number' && label) {
+        this.userNames[friendId] = label;
+      }
+    });
+  }
+
   /**
-  * Obliczamy DebtsTripSummary dla pojedynczej podróży.
-  * Logika:
-  * - jeśli wydatek ma pozycje → podziel kwotę tylko między nimi;
-  * - jeśli pozycje są puste → podziel kwotę między wszystkimi uczestnikami podróży
-  * (trip.participants + creatorId).
-  */
+   * Build DebtsTripSummary for a single trip.
+   */
   private buildSummaryForTrip(
     trip: GetTrip,
     expenses: Expense[],
@@ -106,9 +146,6 @@ export class ExpensesSummaryPageComponent {
     const youOwe: Record<string, number> = {};
     const owedToYou: Record<string, number> = {};
 
-    // tymczsowy nickname dopoki nie mamy id
-    const getName = (userId: number) => `User ${userId}`;
-
     for (const expense of expenses) {
       const payerId = expense.payerId;
       const rawTotal = expense.totalCost;
@@ -127,19 +164,19 @@ export class ExpensesSummaryPageComponent {
       const share = total / expenseParticipants.length;
 
       for (const pid of expenseParticipants) {
-        if (pid === payerId) continue; // nie winien sam sobie
+        if (pid === payerId) continue;
 
-        // user winien
+        // current user owes money to payer
         if (pid === currentUserId && payerId !== currentUserId) {
-          const creditorName = getName(payerId);
-          youOwe[creditorName] = (youOwe[creditorName] ?? 0) + share;
+          const key = this.formatUserKey(payerId);
+          youOwe[key] = (youOwe[key] ?? 0) + share;
           totalYouOwe += share;
         }
 
-        // ktoś winien
+        // someone owes money to current user
         if (payerId === currentUserId && pid !== currentUserId) {
-          const debtorName = getName(pid);
-          owedToYou[debtorName] = (owedToYou[debtorName] ?? 0) + share;
+          const key = this.formatUserKey(pid);
+          owedToYou[key] = (owedToYou[key] ?? 0) + share;
           totalOwedToYou += share;
         }
       }
@@ -157,5 +194,26 @@ export class ExpensesSummaryPageComponent {
     };
 
     return summary;
+  }
+
+  /**
+   * Key format used in youOwe / owedToYou maps:
+   * "<displayName>|<userId>".
+   */
+  private formatUserKey(userId: number): string {
+    const name = this.userNames[userId] ?? `User ${userId}`;
+    return `${name}|${userId}`;
+  }
+
+  // --- helpers used in the template (for name + ID chip) ---
+
+  getDisplayName(key: string): string {
+    const [name] = key.split('|');
+    return name || key;
+  }
+
+  getUserIdFromKey(key: string): string {
+    const parts = key.split('|');
+    return parts[1] ?? '';
   }
 }
