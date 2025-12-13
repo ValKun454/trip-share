@@ -1,10 +1,10 @@
-import { Injectable } from '@angular/core';
+import { Injectable } from '@angular/core'; 
 import { HttpClient } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { GetTrip, CreateTrip } from '../models/trip.model';
 import { Expense, ExpenseCreate } from '../models/expense.model';
-import { DebtsSummary } from '../models/debts.model';
+import { DebtsSummary, TripOweSummary } from '../models/debts.model';
 import { Router } from '@angular/router';
 import { TripInvite } from '../models/trip-invite.model';
 
@@ -233,6 +233,13 @@ export class ApiService {
   getTripSummary(tripId: string): Observable<any> {
     return this.handleAuthError(
       this.http.get<any>(`${this.base}/trips/${encodeURIComponent(tripId)}/summary`, this.getAuthHeaders())
+    );
+  }
+
+  // NEW: podsumowanie długów dla pojedynczego tripa
+  getTripOweSummary(tripId: number): Observable<TripOweSummary> {
+    return this.handleAuthError(
+      this.http.get<TripOweSummary>(`${this.base}/trips/${tripId}/owe`, this.getAuthHeaders())
     );
   }
 

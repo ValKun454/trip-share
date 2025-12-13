@@ -1,10 +1,32 @@
-export interface DebtsTripSummary {
-  trip: { id: string; name: string }; // minimal trip descriptor
-  youOwe: Record<string, number>;     // current user -> how much they owe to others
-  owedToYou: Record<string, number>;  // others -> how much they owe current user
-  totalYouOwe: number;                // sum of "you owe"
-  totalOwedToYou: number;             // sum of "owed to you"
+// Podsumowanie pojedynczej wycieczki na ekranie "Total expenses".
+
+export interface DebtsPersonRow {
+  userId: number;
+  userName: string;
+  amount: number;
 }
 
-// List of summaries for all trips
+export interface DebtsTripSummary {
+  trip: { id: string; name: string };
+  // kogo JA jestem winien
+  youOwe: DebtsPersonRow[];
+  // kto jest winien MNIE
+  owedToYou: DebtsPersonRow[];
+  totalYouOwe: number;
+  totalOwedToYou: number;
+}
+
+// Lista podsumowań po wszystkich tripach
 export type DebtsSummary = DebtsTripSummary[];
+export interface TripOweEntry {
+  userId: number;
+  userName: string | null;
+  amount: string;
+}
+
+export interface TripOweSummary {
+  // oni są mi winni
+  oweToMe: TripOweEntry[];
+  // ja jestem winien innym
+  iOweTo: TripOweEntry[];
+}

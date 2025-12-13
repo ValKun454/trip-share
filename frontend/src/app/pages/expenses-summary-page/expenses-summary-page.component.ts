@@ -1,3 +1,5 @@
+// frontend/src/app/pages/expenses-summary-page/expenses-summary-page.component.ts
+
 import { Component, inject } from '@angular/core';
 import { NgFor, NgIf, KeyValuePipe, CurrencyPipe } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
@@ -8,9 +10,12 @@ import { MatDividerModule } from '@angular/material/divider';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
 
-import { DebtsSummary, DebtsTripSummary } from '../../core/models/debts.model';
+import {
+  DebtsSummary,
+  DebtsTripSummary,
+  TripOweSummary,
+} from '../../core/models/debts.model';
 import { GetTrip } from '../../core/models/trip.model';
-import { Expense } from '../../core/models/expense.model';
 
 import { forkJoin, of, switchMap, map } from 'rxjs';
 
@@ -37,10 +42,7 @@ export class ExpensesSummaryPageComponent {
   loading = true;
   data: DebtsSummary = [];
 
-  // userId -> display name (nickname); filled from current user + friends
-  private userNames: Record<number, string> = {};
-
-  ngOnInit(): void {
+  ngOnInit() {
     const user = this.auth.getCurrentUser();
     const currentUserId = user?.id;
 
@@ -49,26 +51,6 @@ export class ExpensesSummaryPageComponent {
       this.loading = false;
       return;
     }
-
-    if (user?.username) {
-      this.userNames[currentUserId] = user.username;
-    }
-
-    // First, best-effort load friends to map userId -> nickname
-    this.api.getFriends().subscribe({
-      next: (friends: any[]) => {
-        this.buildUserNameMapFromFriends(friends, currentUserId);
-        this.loadSummary(currentUserId);
-      },
-      error: () => {
-        // If friends endpoint fails, still show summary using IDs only
-        this.loadSummary(currentUserId);
-      },
-    });
-  }
-
-  private loadSummary(currentUserId: number): void {
-    this.loading = true;
 
     this.api
       .getTrips()
@@ -79,9 +61,9 @@ export class ExpensesSummaryPageComponent {
           }
 
           const perTrip$ = trips.map((trip) =>
-            this.api.getExpenses(trip.id).pipe(
-              map((expenses) =>
-                this.buildSummaryForTrip(trip, expenses, currentUserId),
+            this.api.getTripOweSummary(trip.id).pipe(
+              map((oweSummary: TripOweSummary) =>
+                this.buildSummaryForTrip(trip, oweSummary),
               ),
             ),
           );
@@ -101,88 +83,47 @@ export class ExpensesSummaryPageComponent {
       });
   }
 
-  private buildUserNameMapFromFriends(list: any[], currentUserId: number): void {
-    const accepted = (list || []).filter((f) => f.isAccepted);
-
-    accepted.forEach((f) => {
-      const userId1 = f.userId1 ?? f.user_id_1;
-      const userId2 = f.userId2 ?? f.user_id_2;
-
-      let friendId: number;
-      if (currentUserId && userId1 === currentUserId) {
-        friendId = userId2;
-      } else if (currentUserId && userId2 === currentUserId) {
-        friendId = userId1;
-      } else {
-        friendId = userId2 ?? userId1;
-      }
-
-      const label = f.friendUsername || f.username || `User ${friendId}`;
-      if (typeof friendId === 'number' && label) {
-        this.userNames[friendId] = label;
-      }
-    });
-  }
-
   /**
-   * Build DebtsTripSummary for a single trip.
+   * Build DebtsTripSummary for a single trip based on /trips/{id}/owe response.
+   *
+   * Backend JSON (camelCase):
+   * {
+   *   oweToMe: [{ userId, userName, amount }],
+   *   iOweTo:  [{ userId, userName, amount }]
+   * }
    */
   private buildSummaryForTrip(
     trip: GetTrip,
-    expenses: Expense[],
-    currentUserId: number,
+    rawOwe: TripOweSummary,
   ): DebtsTripSummary {
-    const participants = trip.participants ?? [];
-    const creatorId = trip.creatorId;
+    const parseAmount = (raw: string): number => {
+      const v = parseFloat(raw);
+      return Number.isNaN(v) ? 0 : v;
+    };
 
-    const participantsSet = new Set<number>(participants);
-    if (creatorId != null) {
-      participantsSet.add(creatorId);
-    }
-    const tripParticipantIds = Array.from(participantsSet);
+    const oweToMeRaw = rawOwe?.oweToMe ?? [];
+    const iOweToRaw = rawOwe?.iOweTo ?? [];
 
-    let totalYouOwe = 0;
-    let totalOwedToYou = 0;
-    const youOwe: Record<string, number> = {};
-    const owedToYou: Record<string, number> = {};
+    const owedToYou = oweToMeRaw
+      .map((item) => ({
+        userId: item.userId,
+        userName: item.userName ?? `User ${item.userId}`,
+        amount: parseAmount(item.amount),
+      }))
+      .filter((x) => x.amount > 0);
 
-    for (const expense of expenses) {
-      const payerId = expense.payerId;
-      const rawTotal = expense.totalCost;
-      const total =
-        typeof rawTotal === 'string' ? parseFloat(rawTotal) : rawTotal;
+    const youOwe = iOweToRaw
+      .map((item) => ({
+        userId: item.userId,
+        userName: item.userName ?? `User ${item.userId}`,
+        amount: parseAmount(item.amount),
+      }))
+      .filter((x) => x.amount > 0);
 
-      if (!total || total <= 0) continue;
+    const totalYouOwe = youOwe.reduce((sum, x) => sum + x.amount, 0);
+    const totalOwedToYou = owedToYou.reduce((sum, x) => sum + x.amount, 0);
 
-      const expenseParticipants =
-        expense.positions && expense.positions.length
-          ? expense.positions
-          : tripParticipantIds;
-
-      if (!expenseParticipants || !expenseParticipants.length) continue;
-
-      const share = total / expenseParticipants.length;
-
-      for (const pid of expenseParticipants) {
-        if (pid === payerId) continue;
-
-        // current user owes money to payer
-        if (pid === currentUserId && payerId !== currentUserId) {
-          const key = this.formatUserKey(payerId);
-          youOwe[key] = (youOwe[key] ?? 0) + share;
-          totalYouOwe += share;
-        }
-
-        // someone owes money to current user
-        if (payerId === currentUserId && pid !== currentUserId) {
-          const key = this.formatUserKey(pid);
-          owedToYou[key] = (owedToYou[key] ?? 0) + share;
-          totalOwedToYou += share;
-        }
-      }
-    }
-
-    const summary: DebtsTripSummary = {
+    return {
       trip: {
         id: trip.id.toString(),
         name: trip.name,
@@ -192,28 +133,5 @@ export class ExpensesSummaryPageComponent {
       totalYouOwe,
       totalOwedToYou,
     };
-
-    return summary;
-  }
-
-  /**
-   * Key format used in youOwe / owedToYou maps:
-   * "<displayName>|<userId>".
-   */
-  private formatUserKey(userId: number): string {
-    const name = this.userNames[userId] ?? `User ${userId}`;
-    return `${name}|${userId}`;
-  }
-
-  // --- helpers used in the template (for name + ID chip) ---
-
-  getDisplayName(key: string): string {
-    const [name] = key.split('|');
-    return name || key;
-  }
-
-  getUserIdFromKey(key: string): string {
-    const parts = key.split('|');
-    return parts[1] ?? '';
   }
 }

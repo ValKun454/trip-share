@@ -1,3 +1,5 @@
+<!-- frontend/src/app/pages/expenses-summary-page/expenses-summary-page.component.html -->
+
 <section class="wrap" *ngIf="!loading; else loader">
   <ng-container *ngIf="data.length; else empty">
     <div class="content">
@@ -33,22 +35,21 @@
           <mat-divider></mat-divider>
 
           <div class="lists">
+            <!-- YOU OWE -->
             <div class="list">
               <div class="list__title">
                 <mat-icon>call_made</mat-icon>
                 <span>You owe</span>
               </div>
 
-              <div class="rows" *ngIf="(s.youOwe | keyvalue).length; else noDebts">
-                <div class="row" *ngFor="let kv of s.youOwe | keyvalue">
-                  <span class="who">
-                    {{ getDisplayName(kv.key) }}
-                    <span *ngIf="getUserIdFromKey(kv.key)" class="id-chip">
-                      {{ getUserIdFromKey(kv.key) }}
-                    </span>
-                  </span>
+              <div class="rows" *ngIf="s.youOwe.length; else noDebts">
+                <div class="row" *ngFor="let p of s.youOwe">
+                  <div class="who">
+                    <span class="who__name">{{ p.userName }}</span>
+                    <span class="user-id-badge">{{ p.userId }}</span>
+                  </div>
                   <span class="amount negative">
-                    {{ kv.value | currency:'PLN':'symbol':'1.2-2' }}
+                    {{ p.amount | currency:'PLN':'symbol':'1.2-2' }}
                   </span>
                 </div>
               </div>
@@ -57,22 +58,21 @@
               </ng-template>
             </div>
 
+            <!-- OWE YOU -->
             <div class="list">
               <div class="list__title">
                 <mat-icon>call_received</mat-icon>
                 <span>Owe you</span>
               </div>
 
-              <div class="rows" *ngIf="(s.owedToYou | keyvalue).length; else noOneOwes">
-                <div class="row" *ngFor="let kv of s.owedToYou | keyvalue">
-                  <span class="who">
-                    {{ getDisplayName(kv.key) }}
-                    <span *ngIf="getUserIdFromKey(kv.key)" class="id-chip">
-                      {{ getUserIdFromKey(kv.key) }}
-                    </span>
-                  </span>
+              <div class="rows" *ngIf="s.owedToYou.length; else noOneOwes">
+                <div class="row" *ngFor="let p of s.owedToYou">
+                  <div class="who">
+                    <span class="who__name">{{ p.userName }}</span>
+                    <span class="user-id-badge">{{ p.userId }}</span>
+                  </div>
                   <span class="amount positive">
-                    {{ kv.value | currency:'PLN':'symbol':'1.2-2' }}
+                    {{ p.amount | currency:'PLN':'symbol':'1.2-2' }}
                   </span>
                 </div>
               </div>

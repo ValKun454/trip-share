@@ -1,3 +1,5 @@
+/* frontend/src/app/pages/expenses-summary-page/expenses-summary-page.component.css */
+
 .wrap {
   min-height: 100dvh;
   padding: 32px 40px;
@@ -44,6 +46,8 @@
   box-shadow: 0 18px 45px rgba(0, 0, 0, 0.45);
 }
 
+/* ===== title ===== */
+
 .trip__title {
   display: flex;
   align-items: center;
@@ -69,12 +73,33 @@
   width: 20px;
 }
 
-.trip__totals {
+/* ===== common grid for top KPIs and bottom lists ===== */
+
+.trip__totals,
+.lists {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
+}
+
+.trip__totals {
   padding: 8px 0 10px;
 }
+
+.lists {
+  padding-top: 10px;
+}
+
+/* карточки внутри сетки должны быть одинаковой ширины и «держать» высоту */
+
+.kpi,
+.list {
+  width: 100%;
+  min-height: 72px; /* чтобы низ визуально совпадал с верхними рамками */
+  box-sizing: border-box;
+}
+
+/* ===== KPI ===== */
 
 .kpi {
   padding: 10px 12px;
@@ -96,28 +121,20 @@
 }
 
 .kpi__value.negative {
-  color: #ef4444;
+  color: #ef4444; /* red-500 */
 }
 
 .kpi__value.positive {
-  color: #22c55e;
+  color: #22c55e; /* green-500 */
 }
 
-/* "You owe" / "Owe you" lists */
-
-.lists {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-  padding: 10px 2px 0;
-}
+/* ===== "You owe" / "Owe you" lists ===== */
 
 .list {
   background: rgba(15, 23, 42, 0.5);
   border-radius: 12px;
   padding: 8px 9px 9px;
   border: 1px solid rgba(30, 64, 175, 0.4);
-  box-sizing: border-box;
 }
 
 .list__title {
@@ -148,7 +165,6 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
   padding: 7px 8px;
   border-radius: 10px;
   background: rgba(15, 23, 42, 0.85);
@@ -157,38 +173,32 @@
 }
 
 .who {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   color: var(--text);
   font-size: 0.9rem;
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-right: 12px;
-  flex: 1 1 auto;
-  min-width: 0;
 }
 
-/* ID chip: small rounded rectangle, grows only when needed */
-.id-chip {
-  min-width: 20px;
-  padding: 0 4px;
-  height: 16px;
-  border-radius: 6px;
+.who__name {
+  white-space: nowrap;
+}
+
+.user-id-badge {
+  padding: 1px 6px;
+  min-width: 24px;
+  border-radius: 999px;
   background: rgba(148, 163, 184, 0.18);
-  border: 1px solid rgba(148, 163, 184, 0.5);
-  color: var(--muted);
-  font-size: 0.7rem;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  font-size: 0.75rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  line-height: 1;
 }
 
 .amount {
   font-weight: 600;
   font-size: 0.9rem;
-  flex-shrink: 0;
 }
 
 .amount.negative {
@@ -203,6 +213,8 @@
   color: var(--muted);
   font-size: 0.85rem;
 }
+
+/* ===== loader / empty ===== */
 
 .loader,
 .empty {
