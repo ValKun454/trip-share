@@ -1,7 +1,5 @@
-// frontend/src/app/pages/expenses-summary-page/expenses-summary-page.component.ts
-
 import { Component, inject } from '@angular/core';
-import { NgFor, NgIf, KeyValuePipe, CurrencyPipe } from '@angular/common';
+import { NgFor, NgIf, CurrencyPipe, NgClass } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
@@ -25,7 +23,7 @@ import { forkJoin, of, switchMap, map } from 'rxjs';
   imports: [
     NgFor,
     NgIf,
-    KeyValuePipe,
+    NgClass,
     CurrencyPipe,
     MatCardModule,
     MatChipsModule,
@@ -41,6 +39,7 @@ export class ExpensesSummaryPageComponent {
 
   loading = true;
   data: DebtsSummary = [];
+  selectedTrip: DebtsTripSummary | null = null;
 
   ngOnInit() {
     const user = this.auth.getCurrentUser();
@@ -75,53 +74,67 @@ export class ExpensesSummaryPageComponent {
         next: (summary) => {
           this.data = summary;
           this.loading = false;
+
+          if (this.selectedTrip) {
+            const stillExists = summary.find(
+              (s) => s.trip.id === this.selectedTrip!.trip.id,
+            );
+            if (!stillExists) {
+              this.selectedTrip = null;
+            }
+          }
         },
         error: () => {
           this.data = [];
           this.loading = false;
+          this.selectedTrip = null;
         },
       });
   }
 
-  /**
-   * Build DebtsTripSummary for a single trip based on /trips/{id}/owe response.
-   *
-   * Backend JSON (camelCase):
-   * {
-   *   oweToMe: [{ userId, userName, amount }],
-   *   iOweTo:  [{ userId, userName, amount }]
-   * }
-   */
+  selectTrip(trip: DebtsTripSummary) {
+    this.selectedTrip = trip;
+  }
+
+  backToSummary() {
+    this.selectedTrip = null;
+  }
+
   private buildSummaryForTrip(
     trip: GetTrip,
-    rawOwe: TripOweSummary,
+    oweSummary: TripOweSummary,
   ): DebtsTripSummary {
-    const parseAmount = (raw: string): number => {
-      const v = parseFloat(raw);
-      return Number.isNaN(v) ? 0 : v;
-    };
+    const youOwe: DebtsTripSummary['youOwe'] = [];
+    const owedToYou: DebtsTripSummary['owedToYou'] = [];
 
-    const oweToMeRaw = rawOwe?.oweToMe ?? [];
-    const iOweToRaw = rawOwe?.iOweTo ?? [];
+    let totalYouOwe = 0;
+    let totalOwedToYou = 0;
 
-    const owedToYou = oweToMeRaw
-      .map((item) => ({
-        userId: item.userId,
-        userName: item.userName ?? `User ${item.userId}`,
-        amount: parseAmount(item.amount),
-      }))
-      .filter((x) => x.amount > 0);
+    for (const entry of oweSummary.iOweTo) {
+      const amount = parseFloat(entry.amount);
+      if (!amount || amount <= 0) continue;
 
-    const youOwe = iOweToRaw
-      .map((item) => ({
-        userId: item.userId,
-        userName: item.userName ?? `User ${item.userId}`,
-        amount: parseAmount(item.amount),
-      }))
-      .filter((x) => x.amount > 0);
+      youOwe.push({
+        userId: entry.userId,
+        userName: entry.userName ?? `User ${entry.userId}`,
+        amount,
+      });
 
-    const totalYouOwe = youOwe.reduce((sum, x) => sum + x.amount, 0);
-    const totalOwedToYou = owedToYou.reduce((sum, x) => sum + x.amount, 0);
+      totalYouOwe += amount;
+    }
+
+    for (const entry of oweSummary.oweToMe) {
+      const amount = parseFloat(entry.amount);
+      if (!amount || amount <= 0) continue;
+
+      owedToYou.push({
+        userId: entry.userId,
+        userName: entry.userName ?? `User ${entry.userId}`,
+        amount,
+      });
+
+      totalOwedToYou += amount;
+    }
 
     return {
       trip: {
