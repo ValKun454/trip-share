@@ -64,7 +64,7 @@ export class TripDetailPageComponent implements OnInit {
     description: [''],
     totalCost: ['', [Validators.required, Validators.min(0.01)]],
     payerId: [this.currentUser?.id ?? null, Validators.required],
-    isScanned: [false],
+    isScanned: [false], // Always false, hidden from UI
     isEvenDivision: [true],
     participantShares: this.fb.array([])
   });
