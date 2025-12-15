@@ -73,12 +73,13 @@
           >
             <mat-form-field appearance="outline" class="full-width">
               <mat-label>SELECT FRIENDS</mat-label>
-              <mat-select 
-                [value]="selectedInviteFriendIds" 
+              <mat-select
+                [value]="selectedInviteFriendIds"
                 (selectionChange)="onFriendSelectionChange($event.value)"
                 (openedChange)="onDropdownOpenChange($event)"
                 panelClass="friends-select-panel"
-                multiple>
+                multiple
+              >
                 <mat-option *ngFor="let f of friendsForInvite" [value]="f.id">
                   <span class="dropdown-friend-avatar">{{ f.label.charAt(0) }}</span>
                   {{ f.label }}
@@ -145,10 +146,19 @@
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Paid By (User ID)</mat-label>
-            <input matInput formControlName="payerId" type="number" />
+            <mat-label>Paid by</mat-label>
+            <mat-select
+              formControlName="payerId"
+              panelClass="friends-select-panel">
+              <mat-option *ngFor="let p of payerOptions" [value]="p.id">
+                <span class="dropdown-friend-avatar">
+                  {{ p.label.charAt(0) }}
+                </span>
+                {{ p.label }}
+              </mat-option>
+            </mat-select>
             <mat-error *ngIf="expenseForm.get('payerId')?.hasError('required')">
-              Payer ID is required
+              Payer is required
             </mat-error>
           </mat-form-field>
 

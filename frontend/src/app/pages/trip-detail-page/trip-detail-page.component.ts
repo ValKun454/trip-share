@@ -12,7 +12,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MatSelectModule, MatSelectChange } from '@angular/material/select';
+import { MatSelectModule } from '@angular/material/select';
 import { forkJoin } from 'rxjs';
 
 import { ApiService } from '../../core/services/api.service';
@@ -63,7 +63,7 @@ export class TripDetailPageComponent implements OnInit {
     name: ['', [Validators.required, Validators.minLength(2)]],
     description: [''],
     totalCost: ['', [Validators.required, Validators.min(0.01)]],
-    payerId: [this.currentUser?.id || '', Validators.required],
+    payerId: [this.currentUser?.id ?? null, Validators.required],
     isScanned: [false],
     isEvenDivision: [true]
   });
@@ -81,6 +81,9 @@ export class TripDetailPageComponent implements OnInit {
   showInvitePanel = false;
   inviteSuccessMessage: string | null = null;
   inviteErrorMessage: string | null = null;
+
+  // NEW: options for "Paid by" dropdown (trip participants)
+  payerOptions: Array<{ id: number; label: string }> = [];
 
   ngOnInit() {
     const tripId = this.route.snapshot.paramMap.get('id');
@@ -140,6 +143,10 @@ export class TripDetailPageComponent implements OnInit {
           ...trip,
           dates: this.buildDatesLabel(trip)
         };
+
+        // build dropdown with participants of this trip
+        this.buildPayerOptions(trip);
+
         this.loadExpenses(tripId);
         this.loadFriendsForInvite();
       },
@@ -166,6 +173,70 @@ export class TripDetailPageComponent implements OnInit {
   }
 
   /**
+   * Build payer dropdown options from trip participants + creator.
+   * We try to enrich labels with usernames from /trips/{id}/owe,
+   * otherwise we fall back to "User #id".
+   */
+  private buildPayerOptions(trip: GetTrip) {
+    const idsSet = new Set<number>(trip.participants || []);
+    if (trip.creatorId != null) {
+      idsSet.add(trip.creatorId);
+    }
+
+    const ids = Array.from(idsSet);
+    const meId = this.currentUser?.id ?? null;
+
+    // базовые лейблы только по ID
+    this.payerOptions = ids.map((id) => ({
+      id,
+      label: `User #${id}`
+    }));
+
+    const payerCtrl = this.expenseForm.get('payerId');
+    if (payerCtrl && !payerCtrl.value) {
+      if (meId !== null && idsSet.has(meId)) {
+        payerCtrl.setValue(meId);
+      } else if (this.payerOptions.length) {
+        payerCtrl.setValue(this.payerOptions[0].id);
+      }
+    }
+
+    // пытаемся подтянуть имена из /trips/{trip_id}/owe
+    this.api.getTripOweSummary(trip.id).subscribe({
+      next: (summary) => {
+        const nameById = new Map<number, string>();
+
+        const collect = (entries: Array<{ userId: number; userName: string | null }>) => {
+          for (const e of entries || []) {
+            if (e.userId != null && e.userName) {
+              nameById.set(e.userId, e.userName);
+            }
+          }
+        };
+
+        collect(summary.oweToMe || []);
+        collect(summary.iOweTo || []);
+
+        if (meId !== null && this.currentUser?.username) {
+          nameById.set(meId, this.currentUser.username);
+        }
+
+        this.payerOptions = ids.map((id) => {
+          const name = nameById.get(id);
+          return {
+            id,
+            label: name ? `${name} (${id})` : `User #${id}`
+          };
+        });
+      },
+      error: (e) => {
+        console.warn('Failed to load owe summary for payer labels', e);
+        // остаёмся с вариантами "User #id"
+      }
+    });
+  }
+
+  /**
    * Load friends that can be invited to this trip (accepted friends
    * that are not already in participants list).
    */
@@ -180,12 +251,12 @@ export class TripDetailPageComponent implements OnInit {
     this.api.getFriends().subscribe({
       next: (list: any[]) => {
         const meId = this.currentUser?.id;
-        const accepted = (list || []).filter(f => f.isAccepted);
+        const accepted = (list || []).filter((f) => f.isAccepted);
 
         const participantIds = this.trip?.participants || [];
 
         this.friendsForInvite = accepted
-          .map(f => {
+          .map((f) => {
             // support both camelCase and snake_case from backend
             const userId1 = f.userId1 ?? f.user_id_1;
             const userId2 = f.userId2 ?? f.user_id_2;
@@ -203,7 +274,7 @@ export class TripDetailPageComponent implements OnInit {
             return { id: friendId, label };
           })
           // do not show users who are already participants
-          .filter(f => !participantIds.includes(f.id));
+          .filter((f) => !participantIds.includes(f.id));
 
         this.friendsInviteLoading = false;
       },
@@ -221,7 +292,7 @@ export class TripDetailPageComponent implements OnInit {
 
   toggleInviteFriend(friendId: number) {
     if (this.selectedInviteFriendIds.includes(friendId)) {
-      this.selectedInviteFriendIds = this.selectedInviteFriendIds.filter(id => id !== friendId);
+      this.selectedInviteFriendIds = this.selectedInviteFriendIds.filter((id) => id !== friendId);
     } else {
       this.selectedInviteFriendIds = [...this.selectedInviteFriendIds, friendId];
     }
@@ -232,7 +303,6 @@ export class TripDetailPageComponent implements OnInit {
   }
 
   onDropdownOpenChange(isOpen: boolean) {
-    // Add class to body or container when dropdown opens
     const inviteCard = document.querySelector('.invite-card');
     if (inviteCard) {
       if (isOpen) {
@@ -272,14 +342,14 @@ export class TripDetailPageComponent implements OnInit {
     }
 
     const participantIds = this.trip.participants || [];
-    const finalIds = Array.from(ids).filter(id => !participantIds.includes(id));
+    const finalIds = Array.from(ids).filter((id) => !participantIds.includes(id));
 
     if (!finalIds.length) {
       this.inviteErrorMessage = 'All selected users are already participants of this trip.';
       return;
     }
 
-    const requests = finalIds.map(userId =>
+    const requests = finalIds.map((userId) =>
       this.api.inviteUserToTrip(this.trip!.id, userId)
     );
 
@@ -307,7 +377,7 @@ export class TripDetailPageComponent implements OnInit {
     this.editingExpense = null; // Clear editing mode
     if (!this.showAddExpense) {
       this.expenseForm.reset({
-        payerId: this.currentUser?.id,
+        payerId: this.currentUser?.id ?? null,
         isScanned: false,
         isEvenDivision: true
       });
@@ -332,7 +402,6 @@ export class TripDetailPageComponent implements OnInit {
       totalCost: Number(formValue.totalCost) || 0
     };
 
-    // Pass trip participants for participantShares
     const participantIds = this.trip.participants || [];
 
     this.api.createExpense(tripId, payload, participantIds).subscribe({
@@ -350,7 +419,7 @@ export class TripDetailPageComponent implements OnInit {
   editExpense(expense: Expense) {
     this.editingExpense = expense;
     this.showAddExpense = true;
-    
+
     // Pre-populate form with expense data
     this.expenseForm.patchValue({
       name: expense.name,
@@ -418,7 +487,10 @@ export class TripDetailPageComponent implements OnInit {
   }
 
   deleteTrip() {
-    if (!this.trip || !confirm('Are you sure you want to delete this trip? This action cannot be undone.')) {
+    if (
+      !this.trip ||
+      !confirm('Are you sure you want to delete this trip? This action cannot be undone.')
+    ) {
       return;
     }
 

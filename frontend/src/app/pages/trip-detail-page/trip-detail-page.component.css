@@ -234,10 +234,12 @@
   border-color: color-mix(in srgb, var(--primary) 50%, var(--outline)) !important;
 }
 
-::ng-deep .trip-details .mat-mdc-input-element {
+::ng-deep .trip-details .mat-mdc-input-element,
+::ng-deep .trip-details .mat-mdc-input-element:focus {
   color: var(--text) !important;
   caret-color: var(--primary) !important;
   font-size: 0.9rem !important;
+  outline: none !important;
 }
 
 ::ng-deep .trip-details .mat-mdc-input-element::placeholder {
@@ -504,4 +506,30 @@
 
 ::ng-deep .trip-details .mat-pseudo-checkbox-checked {
   background: var(--primary) !important;
+}
+
+/* Payer dropdown option */
+.payer-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.payer-option-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.payer-id-pill {
+  min-width: 28px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  text-align: center;
+  border: 1px solid var(--outline);
+  background: rgba(15, 23, 42, 0.9);
+  color: var(--muted);
 }
