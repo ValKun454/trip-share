@@ -167,6 +167,42 @@
             <mat-checkbox formControlName="isEvenDivision">Split Evenly</mat-checkbox>
           </div>
 
+          <!-- Participant Shares Section (shown when Split Evenly is unchecked) -->
+          <div *ngIf="!expenseForm.get('isEvenDivision')?.value" class="participant-shares">
+            <h4 class="participant-shares__title">Assign participants and amounts</h4>
+            
+            <div formArrayName="participantShares" class="participant-list">
+              <div *ngFor="let share of participantSharesArray.controls; let i = index" 
+                   [formGroupName]="i" 
+                   class="participant-item">
+                <mat-checkbox 
+                  formControlName="selected"
+                  (change)="onParticipantToggle(i)"
+                  class="participant-checkbox">
+                  <span class="participant-name">{{ share.get('userName')?.value }}</span>
+                </mat-checkbox>
+                
+                <mat-form-field 
+                  appearance="outline" 
+                  class="participant-amount"
+                  *ngIf="share.get('selected')?.value">
+                  <mat-label>Amount (PLN)</mat-label>
+                  <input 
+                    matInput 
+                    type="number" 
+                    step="0.01" 
+                    formControlName="amount"
+                    (input)="onAmountChange()" />
+                </mat-form-field>
+              </div>
+            </div>
+
+            <div *ngIf="amountMismatchError" class="amount-error">
+              <mat-icon>warning</mat-icon>
+              <span>{{ amountMismatchError }}</span>
+            </div>
+          </div>
+
           <div class="form-actions">
             <button mat-stroked-button type="button" (click)="toggleAddExpense()">Cancel</button>
             <button mat-flat-button color="primary" type="submit" [disabled]="expenseForm.invalid">

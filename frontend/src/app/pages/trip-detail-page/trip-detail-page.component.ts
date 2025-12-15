@@ -1,7 +1,7 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, Validators, FormArray, FormGroup } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -65,8 +65,12 @@ export class TripDetailPageComponent implements OnInit {
     totalCost: ['', [Validators.required, Validators.min(0.01)]],
     payerId: [this.currentUser?.id ?? null, Validators.required],
     isScanned: [false],
-    isEvenDivision: [true]
+    isEvenDivision: [true],
+    participantShares: this.fb.array([])
   });
+
+  // Participant shares state
+  amountMismatchError: string | null = null;
 
   // Invite-friends UI state
   inviteForm = this.fb.group({
@@ -93,6 +97,15 @@ export class TripDetailPageComponent implements OnInit {
       this.error = 'Trip ID not found';
       this.loading = false;
     }
+
+    // Watch for changes to isEvenDivision
+    this.expenseForm.get('isEvenDivision')?.valueChanges.subscribe(isEven => {
+      this.onSplitEvenlyChange(isEven || false);
+    });
+  }
+
+  get participantSharesArray(): FormArray {
+    return this.expenseForm.get('participantShares') as FormArray;
   }
 
   /**
@@ -375,12 +388,102 @@ export class TripDetailPageComponent implements OnInit {
   toggleAddExpense() {
     this.showAddExpense = !this.showAddExpense;
     this.editingExpense = null; // Clear editing mode
+    this.amountMismatchError = null;
     if (!this.showAddExpense) {
       this.expenseForm.reset({
         payerId: this.currentUser?.id ?? null,
         isScanned: false,
         isEvenDivision: true
       });
+      this.participantSharesArray.clear();
+    } else {
+      // Initialize participant shares when opening form
+      this.initializeParticipantShares();
+    }
+  }
+
+  initializeParticipantShares() {
+    this.participantSharesArray.clear();
+    this.payerOptions.forEach(payer => {
+      this.participantSharesArray.push(this.fb.group({
+        userId: [payer.id],
+        userName: [payer.label],
+        selected: [false],
+        amount: [{ value: 0, disabled: true }]
+      }));
+    });
+  }
+
+  onSplitEvenlyChange(isEven: boolean) {
+    if (isEven) {
+      // Disable all amount inputs when split evenly
+      this.participantSharesArray.controls.forEach(control => {
+        control.get('amount')?.disable();
+        control.get('selected')?.setValue(false);
+      });
+      this.amountMismatchError = null;
+    }
+  }
+
+  onParticipantToggle(index: number) {
+    const control = this.participantSharesArray.at(index);
+    const selected = control.get('selected')?.value;
+    const amountControl = control.get('amount');
+    
+    if (selected) {
+      amountControl?.enable();
+    } else {
+      amountControl?.disable();
+      amountControl?.setValue(0);
+    }
+    
+    this.validateParticipantAmounts();
+  }
+
+  onAmountChange() {
+    this.validateParticipantAmounts();
+  }
+
+  validateParticipantAmounts() {
+    const isEvenDivision = this.expenseForm.get('isEvenDivision')?.value;
+    if (isEvenDivision) {
+      this.amountMismatchError = null;
+      return;
+    }
+
+    const totalCost = Number(this.expenseForm.get('totalCost')?.value) || 0;
+    if (totalCost === 0) {
+      this.amountMismatchError = null;
+      return;
+    }
+
+    let sumAmounts = 0;
+    let hasSelected = false;
+
+    this.participantSharesArray.controls.forEach(control => {
+      const selected = control.get('selected')?.value;
+      if (selected) {
+        hasSelected = true;
+        const amount = Number(control.get('amount')?.value) || 0;
+        sumAmounts += amount;
+      }
+    });
+
+    if (!hasSelected) {
+      this.amountMismatchError = 'Please select at least one participant';
+      return;
+    }
+
+    const diff = Math.abs(sumAmounts - totalCost);
+    if (diff > 0.01) { // Allow small rounding differences
+      const diffStr = diff.toFixed(2);
+      if (sumAmounts > totalCost) {
+        this.amountMismatchError = `Amounts exceed total by ${diffStr} PLN`;
+      } else {
+        this.amountMismatchError = `Amounts are ${diffStr} PLN short of total`;
+      }
+    } else {
+      this.amountMismatchError = null;
     }
   }
 
@@ -390,21 +493,53 @@ export class TripDetailPageComponent implements OnInit {
       return;
     }
 
+    // Validate participant amounts if not splitting evenly
+    this.validateParticipantAmounts();
+    if (this.amountMismatchError) {
+      return;
+    }
+
     const tripId = this.trip.id;
     const formValue = this.expenseForm.value;
+    const isEvenDivision = formValue.isEvenDivision || true;
 
     const payload = {
       isScanned: formValue.isScanned || false,
       name: formValue.name || '',
       description: formValue.description || '',
       payerId: Number(formValue.payerId) || 0,
-      isEvenDivision: formValue.isEvenDivision || true,
+      isEvenDivision: isEvenDivision,
       totalCost: Number(formValue.totalCost) || 0
     };
 
-    const participantIds = this.trip.participants || [];
+    let participantShares: Array<{userId: number, isPaying: boolean, amount: number}>;
 
-    this.api.createExpense(tripId, payload, participantIds).subscribe({
+    if (isEvenDivision) {
+      // Use all trip participants
+      const participantIds = this.trip.participants || [];
+      participantShares = participantIds.map(userId => ({
+        userId: userId,
+        isPaying: userId === payload.payerId,
+        amount: 0 // Backend will calculate
+      }));
+    } else {
+      // Use selected participants with custom amounts
+      participantShares = [];
+      this.participantSharesArray.controls.forEach(control => {
+        const selected = control.get('selected')?.value;
+        if (selected) {
+          const userId = control.get('userId')?.value;
+          const amount = Number(control.get('amount')?.value) || 0;
+          participantShares.push({
+            userId: userId,
+            isPaying: userId === payload.payerId,
+            amount: amount
+          });
+        }
+      });
+    }
+
+    this.api.createExpenseWithShares(tripId, payload, participantShares).subscribe({
       next: () => {
         this.toggleAddExpense();
         this.loadExpenses(String(tripId));

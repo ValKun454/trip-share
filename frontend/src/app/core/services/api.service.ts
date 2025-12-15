@@ -196,6 +196,28 @@ export class ApiService {
   }
 
   /**
+   * Create expense with custom participant shares
+   */
+  createExpenseWithShares(
+    tripId: number, 
+    exp: ExpenseCreate, 
+    participantShares: Array<{userId: number, isPaying: boolean, amount: number}>
+  ): Observable<Expense> {
+    const payload = {
+      isScanned: exp.isScanned,
+      name: exp.name,
+      description: exp.description || '',
+      payerId: exp.payerId,
+      isEvenDivision: exp.isEvenDivision,
+      totalCost: exp.totalCost,
+      participantShares: participantShares
+    };
+    return this.handleAuthError(
+      this.http.post<Expense>(`${this.base}/trips/${tripId}/expenses`, payload, this.getAuthHeaders())
+    );
+  }
+
+  /**
    * Update expense - uses camelCase Pydantic aliases
    * All fields are optional
    */
