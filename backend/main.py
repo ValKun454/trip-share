@@ -1228,6 +1228,7 @@ def update_expense(
     - Amount in participant_shares is ignored
     - total_cost is split evenly among participants where is_paying=True
     - Remainder is added to first paying participant
+    - Shares are automatically recalculated when total_cost changes
     
     If is_even_division=False:
     - Sum of amounts for is_paying=True must equal total_cost
@@ -1267,6 +1268,9 @@ def update_expense(
             detail="Expense not found"
         )
 
+    # Track if we need to recalculate shares
+    needs_recalculation = False
+    
     # Update expense fields if provided
     if data.is_scanned is not None:
         expense.is_scanned = data.is_scanned
@@ -1275,8 +1279,12 @@ def update_expense(
     if data.description is not None:
         expense.description = data.description
     if data.is_even_division is not None:
+        if expense.is_even_division != data.is_even_division:
+            needs_recalculation = True
         expense.is_even_division = data.is_even_division
     if data.total_cost is not None:
+        if expense.total_cost != data.total_cost:
+            needs_recalculation = True
         expense.total_cost = data.total_cost
 
     # Update payer if provided
@@ -1306,7 +1314,7 @@ def update_expense(
 
     db.commit()
 
-    # Update participant shares if provided in request
+    # Update participant shares if provided in request OR if recalculation is needed
     if data.participant_shares is not None:
         # Handle even division vs custom amounts
         if expense.is_even_division:
@@ -1357,6 +1365,29 @@ def update_expense(
             share.amount = share_amounts.get(share_update.user_id, Decimal('0.0')) if share_update.is_paying else Decimal('0.0')
 
         db.commit()
+    
+    elif needs_recalculation and expense.is_even_division:
+        # Automatically recalculate shares when total_cost or is_even_division changes
+        # and is_even_division is True
+        existing_shares = db.query(ParticipantShare).filter(
+            ParticipantShare.expense_id == expense_id
+        ).all()
+        
+        # Filter paying shares
+        paying_shares = [share for share in existing_shares if share.is_paying]
+        
+        if paying_shares:
+            # Calculate even division with updated total_cost
+            share_amounts = calculate_even_division(expense.total_cost, paying_shares)
+            
+            # Update amounts for all shares
+            for share in existing_shares:
+                if share.is_paying:
+                    share.amount = share_amounts.get(share.user_id, Decimal('0.0'))
+                else:
+                    share.amount = Decimal('0.0')
+            
+            db.commit()
 
     db.refresh(expense)
 
