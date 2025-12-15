@@ -26,8 +26,6 @@ import { Router } from '@angular/router';
 })
 export class LoginPageComponent implements OnInit {
   loginForm: FormGroup;
-  readonly DEMO_EMAIL = 'demo@example.com';
-  readonly DEMO_PASSWORD = 'demo123';
   isLoading = false;
   serverError: string | null = null;
   hidePassword = true;
@@ -100,13 +98,5 @@ export class LoginPageComponent implements OnInit {
         }
       }
     });
-  }
-
-  fillDemo() {
-    this.loginForm.setValue({ email: this.DEMO_EMAIL, password: this.DEMO_PASSWORD });
-  }
-
-  loginAsDemo() {
-    this.authService.loginAsDemo().subscribe();
   }
 }

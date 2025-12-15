@@ -56,15 +56,6 @@
           <span *ngIf="!isLoading">Sign In</span>
           <span *ngIf="isLoading">Signing in...</span>
         </button>
-
-        <div class="quick-actions">
-          <button mat-stroked-button type="button" (click)="fillDemo()">
-            Fill demo credentials
-          </button>
-          <button mat-flat-button color="accent" type="button" (click)="loginAsDemo()">
-            Login as demo user
-          </button>
-        </div>
       </form>
 
       <div class="server-error" *ngIf="serverError">
