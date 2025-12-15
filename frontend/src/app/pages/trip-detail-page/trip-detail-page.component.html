@@ -167,9 +167,11 @@
             <mat-checkbox formControlName="isEvenDivision">Split Evenly</mat-checkbox>
           </div>
 
-          <!-- Participant Shares Section (shown when Split Evenly is unchecked) -->
-          <div *ngIf="!expenseForm.get('isEvenDivision')?.value" class="participant-shares">
-            <h4 class="participant-shares__title">Assign participants and amounts</h4>
+          <!-- Participant Shares Section (shown for both modes) -->
+          <div class="participant-shares">
+            <h4 class="participant-shares__title">
+              {{ expenseForm.get('isEvenDivision')?.value ? 'Select participants to split evenly' : 'Assign participants and amounts' }}
+            </h4>
             
             <div formArrayName="participantShares" class="participant-list">
               <div *ngFor="let share of participantSharesArray.controls; let i = index" 
@@ -182,10 +184,11 @@
                   <span class="participant-name">{{ share.get('userName')?.value }}</span>
                 </mat-checkbox>
                 
+                <!-- Amount input only shown when NOT split evenly AND participant is selected -->
                 <mat-form-field 
                   appearance="outline" 
                   class="participant-amount"
-                  *ngIf="share.get('selected')?.value">
+                  *ngIf="!expenseForm.get('isEvenDivision')?.value && share.get('selected')?.value">
                   <mat-label>Amount (PLN)</mat-label>
                   <input 
                     matInput 

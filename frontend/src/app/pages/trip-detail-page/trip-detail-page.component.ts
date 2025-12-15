@@ -416,12 +416,20 @@ export class TripDetailPageComponent implements OnInit {
 
   onSplitEvenlyChange(isEven: boolean) {
     if (isEven) {
-      // Disable all amount inputs when split evenly
+      // In split evenly mode: enable checkboxes, disable amount inputs
       this.participantSharesArray.controls.forEach(control => {
         control.get('amount')?.disable();
-        control.get('selected')?.setValue(false);
+        control.get('amount')?.setValue(0);
       });
       this.amountMismatchError = null;
+    } else {
+      // In pay by amount mode: enable both checkboxes and amount inputs for selected
+      this.participantSharesArray.controls.forEach(control => {
+        const selected = control.get('selected')?.value;
+        if (selected) {
+          control.get('amount')?.enable();
+        }
+      });
     }
   }
 
@@ -429,12 +437,20 @@ export class TripDetailPageComponent implements OnInit {
     const control = this.participantSharesArray.at(index);
     const selected = control.get('selected')?.value;
     const amountControl = control.get('amount');
+    const isEvenDivision = this.expenseForm.get('isEvenDivision')?.value;
     
-    if (selected) {
-      amountControl?.enable();
-    } else {
+    if (isEvenDivision) {
+      // In split evenly mode: amount stays disabled
       amountControl?.disable();
       amountControl?.setValue(0);
+    } else {
+      // In pay by amount mode: enable/disable amount based on selection
+      if (selected) {
+        amountControl?.enable();
+      } else {
+        amountControl?.disable();
+        amountControl?.setValue(0);
+      }
     }
     
     this.validateParticipantAmounts();
@@ -446,6 +462,8 @@ export class TripDetailPageComponent implements OnInit {
 
   validateParticipantAmounts() {
     const isEvenDivision = this.expenseForm.get('isEvenDivision')?.value;
+    
+    // In split evenly mode, no amount validation needed
     if (isEvenDivision) {
       this.amountMismatchError = null;
       return;
@@ -493,15 +511,27 @@ export class TripDetailPageComponent implements OnInit {
       return;
     }
 
-    // Validate participant amounts if not splitting evenly
-    this.validateParticipantAmounts();
-    if (this.amountMismatchError) {
-      return;
-    }
-
     const tripId = this.trip.id;
     const formValue = this.expenseForm.value;
     const isEvenDivision = formValue.isEvenDivision || true;
+
+    // Check if at least one participant is selected
+    const hasSelectedParticipants = this.participantSharesArray.controls.some(
+      control => control.get('selected')?.value
+    );
+
+    if (!hasSelectedParticipants) {
+      this.amountMismatchError = 'Please select at least one participant';
+      return;
+    }
+
+    // Validate participant amounts if not splitting evenly
+    if (!isEvenDivision) {
+      this.validateParticipantAmounts();
+      if (this.amountMismatchError) {
+        return;
+      }
+    }
 
     const payload = {
       isScanned: formValue.isScanned || false,
@@ -515,13 +545,19 @@ export class TripDetailPageComponent implements OnInit {
     let participantShares: Array<{userId: number, isPaying: boolean, amount: number}>;
 
     if (isEvenDivision) {
-      // Use all trip participants
-      const participantIds = this.trip.participants || [];
-      participantShares = participantIds.map(userId => ({
-        userId: userId,
-        isPaying: userId === payload.payerId,
-        amount: 0 // Backend will calculate
-      }));
+      // Use selected participants with even split (amount = 0, backend calculates)
+      participantShares = [];
+      this.participantSharesArray.controls.forEach(control => {
+        const selected = control.get('selected')?.value;
+        if (selected) {
+          const userId = control.get('userId')?.value;
+          participantShares.push({
+            userId: userId,
+            isPaying: userId === payload.payerId,
+            amount: 0 // Backend will calculate even split
+          });
+        }
+      });
     } else {
       // Use selected participants with custom amounts
       participantShares = [];
