@@ -193,7 +193,7 @@
           <span *ngIf="exp.isScanned" class="badge">📸</span>
         </div>
         <div class="expense-amount">{{ formatCurrency(exp.totalCost) }}</div>
-        <div class="expense-meta">User #{{ exp.payerId }}</div>
+        <div class="expense-meta">{{ getPayerDisplayName(exp) }}</div>
         <div class="expense-meta">{{ exp.createdAt | date: 'M/d/yy, h:mm a' }}</div>
         <div class="expense-actions">
           <button

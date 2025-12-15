@@ -1,4 +1,13 @@
 /**
+ * Participant share in expense response
+ */
+export interface ParticipantShareResponse {
+  username: string;
+  isPaying: boolean;
+  amount: string;
+}
+
+/**
  * Backend Expense response model - maps to backend schemas.Expense
  * Uses Pydantic aliases: isScanned, createdAt, tripId, payerId, isEvenDivision
  */
@@ -13,6 +22,7 @@ export interface Expense {
   isEvenDivision: boolean;
   totalCost: number | string; // Decimal from backend (handle as string or number)
   positions: number[]; // List of user IDs who are included in this expense
+  participantShares: ParticipantShareResponse[];
 }
 
 /**

@@ -517,4 +517,23 @@ export class TripDetailPageComponent implements OnInit {
       currency: 'PLN'
     }).format(num);
   }
+
+  /**
+   * Get payer display name from participantShares
+   * Returns "Username ID" format or "User #ID" as fallback
+   */
+  getPayerDisplayName(expense: Expense): string {
+    if (!expense.participantShares || expense.participantShares.length === 0) {
+      return `User #${expense.payerId}`;
+    }
+
+    // Find the participant who is paying
+    const payer = expense.participantShares.find(share => share.isPaying);
+    
+    if (payer && payer.username) {
+      return `${payer.username} ${expense.payerId}`;
+    }
+
+    return `User #${expense.payerId}`;
+  }
 }
