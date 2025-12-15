@@ -642,6 +642,7 @@ async def respond_to_trip_invite(
     Accept or decline a trip invite
     Only the invitee can respond to the invite
     Status must be 'accepted' or 'declined'
+    When accepted, creates ParticipantShare records for all existing expenses
     """
     # Validate status
     if data.status not in ['accepted', 'declined']:
@@ -675,7 +676,7 @@ async def respond_to_trip_invite(
     # Update the invite status
     invite.status = data.status
 
-    # If accepted, add user as participant (if not already a participant)
+    # If accepted, add user as participant and create shares for existing expenses
     if data.status == 'accepted':
         # Check if user is already a participant
         existing_participant = db.query(Participant).filter(
@@ -689,6 +690,30 @@ async def respond_to_trip_invite(
                 trip_id=invite.trip_id
             )
             db.add(new_participant)
+            db.flush()  # Flush to make participant available for foreign key
+
+        # Get all existing expenses for this trip
+        existing_expenses = db.query(ExpenseModel).filter(
+            ExpenseModel.trip_id == invite.trip_id
+        ).all()
+
+        # Create ParticipantShare for each existing expense
+        for expense in existing_expenses:
+            # Check if share already exists (shouldn't happen, but be safe)
+            existing_share = db.query(ParticipantShare).filter(
+                ParticipantShare.expense_id == expense.id,
+                ParticipantShare.user_id == current_user.id
+            ).first()
+
+            if not existing_share:
+                new_share = ParticipantShare(
+                    user_id=current_user.id,
+                    trip_id=invite.trip_id,
+                    expense_id=expense.id,
+                    is_paying=False,  # Default to not paying
+                    amount=Decimal('0.0')  # Default amount is 0
+                )
+                db.add(new_share)
 
     db.commit()
     db.refresh(invite)
