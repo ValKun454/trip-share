@@ -105,18 +105,38 @@
   <!-- Friends List -->
   <div *ngIf="!loading && friends.length > 0" class="friends-section">
     <h2 class="section-title">Your Friends ({{ friends.length }})</h2>
-    <div class="friends-grid">
-      <mat-card *ngFor="let friend of friends" class="friend-card">
+    <div class="friends-grid friends-grid--compact">
+      <mat-card *ngFor="let friend of friends" class="friend-card friend-card--compact">
         <mat-card-header>
           <div mat-card-avatar class="friend-avatar">
             {{ getInitials(friend.friendUsername || friend.username) }}
           </div>
-          <mat-card-title>{{ friend.friendUsername || friend.username || 'Friend' }}</mat-card-title>
-          <mat-card-subtitle>
-            ID: {{ getOtherFriendId(friend) }}
-          </mat-card-subtitle>
+
+          <div class="friend-header-main">
+            <mat-card-title>
+              {{ friend.friendUsername || friend.username || 'Friend' }}
+            </mat-card-title>
+            <mat-card-subtitle>
+              ID: {{ getOtherFriendId(friend) }}
+            </mat-card-subtitle>
+          </div>
+
+          <button
+            mat-icon-button
+            color="warn"
+            class="friend-remove-btn"
+            (click)="removeFriend(friend)"
+            [attr.aria-label]="'Remove friend'"
+          >
+            <mat-icon>delete</mat-icon>
+          </button>
         </mat-card-header>
-        <mat-card-content>
+
+        <!-- meta, widoczny jak mamy coś do pokazania-->
+        <mat-card-content
+          *ngIf="friend.email || friend.created_at"
+          class="friend-meta"
+        >
           <div class="friend-email" *ngIf="friend.email">
             <mat-icon>email</mat-icon>
             <span>{{ friend.email }}</span>
@@ -126,17 +146,15 @@
             <span>Added {{ friend.created_at | date:'short' }}</span>
           </div>
         </mat-card-content>
-        <mat-card-actions align="end">
-          <button mat-icon-button color="warn" (click)="removeFriend(friend)" [attr.aria-label]="'Remove friend'">
-            <mat-icon>delete</mat-icon>
-          </button>
-        </mat-card-actions>
       </mat-card>
     </div>
   </div>
 
   <!-- Empty State (uwzględniamy też brak tripInvites) -->
-  <div *ngIf="!loading && friends.length === 0 && friendRequests.length === 0 && tripInvites.length === 0" class="empty-state">
+  <div
+    *ngIf="!loading && friends.length === 0 && friendRequests.length === 0 && tripInvites.length === 0"
+    class="empty-state"
+  >
     <mat-icon class="empty-icon">people_outline</mat-icon>
     <h3>No friends yet</h3>
     <p>Start by adding your first friend using their User ID above</p>

@@ -250,6 +250,53 @@ input[type="text"][inputmode="numeric"] {
   justify-content: flex-end;
 }
 
+/* Compact cards in "Your Friends" section */
+.friends-grid--compact {
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+}
+
+.friend-card--compact {
+  position: relative;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
+  border-radius: 12px;
+}
+
+.friend-card--compact mat-card-header {
+  padding: 12px 14px;
+  border-bottom: none;
+  gap: 10px;
+}
+
+.friend-card--compact .friend-avatar {
+  width: 36px;
+  height: 36px;
+  font-size: 14px;
+}
+
+.friend-card--compact .mat-mdc-card-header {
+  align-items: center;
+}
+
+.friend-header-main {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.friend-remove-btn {
+  margin-left: auto;
+}
+
+.friend-meta {
+  padding: 8px 14px 12px;
+  border-top: 1px solid var(--outline);
+}
+
+.friend-meta .friend-email,
+.friend-meta .friend-added {
+  font-size: 0.8rem;
+}
+
 /* Empty State */
 .empty-state {
   display: flex;
