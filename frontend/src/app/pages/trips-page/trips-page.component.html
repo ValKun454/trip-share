@@ -52,12 +52,6 @@
         </mat-form-field>
       </div>
 
-      <mat-form-field appearance="outline" class="full-width">
-        <mat-label>Participants (comma separated)</mat-label>
-        <input matInput formControlName="participants">
-        <mat-hint>Use user IDs or emails</mat-hint>
-      </mat-form-field>
-
       <!-- friends dropdown (always visible) -->
       <div *ngIf="friendsLoading">Loading friends...</div>
       <div *ngIf="friendsError" class="friends-error">{{ friendsError }}</div>

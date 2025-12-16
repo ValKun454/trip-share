@@ -95,8 +95,7 @@ export class TripsPageComponent implements OnInit {
     name: ['', [Validators.required, Validators.minLength(2)]],
     description: ['', [Validators.maxLength(500)]],
     startDate: [''],
-    endDate: [''],
-    participants: ['']
+    endDate: ['']
   }, { validators: startBeforeEnd() });
 
   private api = inject(ApiService);
@@ -269,25 +268,9 @@ export class TripsPageComponent implements OnInit {
     const val = this.form.value as any;
     const name = (val.name ?? '').toString().trim();
     const description = (val.description ?? '').toString().trim();
-    const participantsRaw = (val.participants ?? '').toString().trim();
 
-    // Parse participants as user IDs, comma-separated
-    let participants: number[] = participantsRaw
-      ? participantsRaw
-          .split(',')
-          .map((s: string) => {
-            const num = parseInt(s.trim(), 10);
-            return isNaN(num) ? 0 : num;
-          })
-          .filter((num: number) => num > 0)
-      : [];
-
-    // dodaj wybranych znajomych do ogólnej listy uczestników
-    if (this.selectedFriendIds.length) {
-      const set = new Set<number>(participants);
-      this.selectedFriendIds.forEach(id => set.add(id));
-      participants = Array.from(set);
-    }
+    // участники теперь только из dropdown "SELECT FRIENDS"
+    let participants: number[] = Array.from(new Set(this.selectedFriendIds));
 
     // dates from form -> "dd.MM.yyyy"
     const startLabel = this.toDDMMYYYY(val.startDate);
@@ -309,11 +292,13 @@ export class TripsPageComponent implements OnInit {
 
     // editing or creating?
     if (this.editingTripId) {
-      const updateDto = {
+      const updateDto: any = {
         name,
-        description: finalDescription,
-        participants
+        description: finalDescription
       };
+      if (participants.length) {
+        updateDto.participants = participants;
+      }
       console.log('Updating trip', this.editingTripId, 'with DTO:', updateDto);
       this.api.updateTrip(this.editingTripId, updateDto).subscribe({
         next: (response: any) => {
@@ -399,8 +384,7 @@ export class TripsPageComponent implements OnInit {
     this.editingTripId = trip.id;
     this.form.patchValue({
       name: trip.name,
-      description: trip.description || '',
-      participants: trip.participants?.join(', ') || ''
+      description: trip.description || ''
     });
     this.selectedFriendIds = trip.participants
       ? trip.participants.filter(id => this.friends.some(f => f.id === id))
