@@ -7,7 +7,8 @@ export interface DebtsPersonRow {
 }
 
 export interface DebtsTripSummary {
-  trip: { id: string; name: string };
+  // We keep minimal trip info, plus optional participantsCount for UX hints
+  trip: { id: string; name: string; participantsCount?: number };
   // kogo JA jestem winien
   youOwe: DebtsPersonRow[];
   // kto jest winien MNIE

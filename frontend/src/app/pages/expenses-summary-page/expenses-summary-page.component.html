@@ -50,6 +50,11 @@
                 </div>
               </div>
             </div>
+
+            <!-- UX hint when a trip has only one participant -->
+            <div class="muted" *ngIf="(s.trip.participantsCount || 0) <= 1">
+              No balances here — only you are in this trip. Add participants to share expenses.
+            </div>
           </mat-card>
         </div>
       </div>

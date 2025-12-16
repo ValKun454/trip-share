@@ -140,6 +140,10 @@ export class ExpensesSummaryPageComponent {
       trip: {
         id: trip.id.toString(),
         name: trip.name,
+        // For UX: show hint when there's only one participant
+        participantsCount: Array.isArray(trip.participants)
+          ? trip.participants.length
+          : 0,
       },
       youOwe,
       owedToYou,

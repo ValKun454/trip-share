@@ -236,6 +236,29 @@ export class ApiService {
   }
 
   /**
+   * Update expense with participant shares
+   */
+  updateExpenseWithShares(
+    tripId: number, 
+    expenseId: number,
+    data: Partial<ExpenseCreate>,
+    participantShares: Array<{userId: number, isPaying: boolean, amount: number}>
+  ): Observable<Expense> {
+    const payload: any = {};
+    if (data.isScanned !== undefined) payload.isScanned = data.isScanned;
+    if (data.name !== undefined) payload.name = data.name;
+    if (data.description !== undefined) payload.description = data.description;
+    if (data.payerId !== undefined) payload.payerId = data.payerId;
+    if (data.isEvenDivision !== undefined) payload.isEvenDivision = data.isEvenDivision;
+    if (data.totalCost !== undefined) payload.totalCost = data.totalCost;
+    payload.participantShares = participantShares;
+    
+    return this.handleAuthError(
+      this.http.put<Expense>(`${this.base}/trips/${tripId}/expenses/${expenseId}`, payload, this.getAuthHeaders())
+    );
+  }
+
+  /**
    * Delete expense
    */
   deleteExpense(tripId: number, expenseId: number): Observable<void> {

@@ -553,7 +553,7 @@ export class TripDetailPageComponent implements OnInit {
           const userId = control.get('userId')?.value;
           participantShares.push({
             userId: userId,
-            isPaying: userId === payload.payerId,
+            isPaying: true, // All selected participants are \"paying\" (owing) their share
             amount: 0 // Backend will calculate even split
           });
         }
@@ -568,7 +568,7 @@ export class TripDetailPageComponent implements OnInit {
           const amount = Number(control.get('amount')?.value) || 0;
           participantShares.push({
             userId: userId,
-            isPaying: userId === payload.payerId,
+            isPaying: true, // All selected participants are \"paying\" (owing) their share
             amount: amount
           });
         }
@@ -590,6 +590,7 @@ export class TripDetailPageComponent implements OnInit {
   editExpense(expense: Expense) {
     this.editingExpense = expense;
     this.showAddExpense = true;
+    this.amountMismatchError = null;
 
     // Pre-populate form with expense data
     this.expenseForm.patchValue({
@@ -599,6 +600,59 @@ export class TripDetailPageComponent implements OnInit {
       payerId: expense.payerId,
       isScanned: expense.isScanned,
       isEvenDivision: expense.isEvenDivision
+    });
+
+    // Initialize participant shares from existing expense data
+    this.participantSharesArray.clear();
+    
+    // Build a map of usernames to share data for better matching
+    const sharesByUsername = new Map<string, {isPaying: boolean, amount: string}>();
+    if (expense.participantShares) {
+      expense.participantShares.forEach(share => {
+        if (share.username) {
+          // Normalize username for matching (trim and lowercase)
+          const normalizedUsername = share.username.trim().toLowerCase();
+          sharesByUsername.set(normalizedUsername, {
+            isPaying: share.isPaying,
+            amount: share.amount
+          });
+        }
+      });
+    }
+
+    // Build participant shares array for all participants
+    this.payerOptions.forEach(payer => {
+      // Try to extract username from label
+      // Label formats: "username (ID)" or "User #ID"
+      let matchingShare = null;
+      
+      // Try to extract username from the label
+      const labelMatch = payer.label.match(/^(.+?)\s*\(\d+\)$/);
+      if (labelMatch) {
+        const usernameFromLabel = labelMatch[1].trim().toLowerCase();
+        matchingShare = sharesByUsername.get(usernameFromLabel);
+      }
+      
+      // Determine if this participant should be selected
+      // They should be selected if:
+      // 1. They have isPaying=true in the share data, OR
+      // 2. They have a non-zero amount (handles legacy data where isPaying might be wrong)
+      const amount = matchingShare ? Number(matchingShare.amount) : 0;
+      const hasAmount = amount > 0;
+      const isPaying = matchingShare ? matchingShare.isPaying : false;
+      const isSelected = isPaying || hasAmount;
+      
+      const shareControl = this.fb.group({
+        userId: [payer.id],
+        userName: [payer.label],
+        selected: [isSelected],
+        amount: [{
+          value: amount,
+          disabled: expense.isEvenDivision || !isSelected
+        }]
+      });
+      
+      this.participantSharesArray.push(shareControl);
     });
   }
 
@@ -611,17 +665,70 @@ export class TripDetailPageComponent implements OnInit {
     const tripId = this.trip.id;
     const expenseId = this.editingExpense.id;
     const formValue = this.expenseForm.value;
+    const isEvenDivision = formValue.isEvenDivision || true;
+
+    // Check if at least one participant is selected
+    const hasSelectedParticipants = this.participantSharesArray.controls.some(
+      control => control.get('selected')?.value
+    );
+
+    if (!hasSelectedParticipants) {
+      this.amountMismatchError = 'Please select at least one participant';
+      return;
+    }
+
+    // Validate participant amounts if not splitting evenly
+    if (!isEvenDivision) {
+      this.validateParticipantAmounts();
+      if (this.amountMismatchError) {
+        return;
+      }
+    }
 
     const payload = {
       isScanned: formValue.isScanned || false,
       name: formValue.name || '',
       description: formValue.description || '',
       payerId: Number(formValue.payerId) || 0,
-      isEvenDivision: formValue.isEvenDivision || true,
+      isEvenDivision: isEvenDivision,
       totalCost: Number(formValue.totalCost) || 0
     };
 
-    this.api.updateExpense(tripId, expenseId, payload).subscribe({
+    // Build participant shares
+    let participantShares: Array<{userId: number, isPaying: boolean, amount: number}>;
+
+    if (isEvenDivision) {
+      // Use selected participants with even split (amount = 0, backend calculates)
+      participantShares = [];
+      this.participantSharesArray.controls.forEach(control => {
+        const selected = control.get('selected')?.value;
+        if (selected) {
+          const userId = control.get('userId')?.value;
+          participantShares.push({
+            userId: userId,
+            isPaying: true, // All selected participants are \"paying\" (owing) their share
+            amount: 0 // Backend will calculate even split
+          });
+        }
+      });
+    } else {
+      // Use selected participants with custom amounts
+      participantShares = [];
+      this.participantSharesArray.controls.forEach(control => {
+        const selected = control.get('selected')?.value;
+        if (selected) {
+          const userId = control.get('userId')?.value;
+          const amount = Number(control.get('amount')?.value) || 0;
+          participantShares.push({
+            userId: userId,
+            isPaying: true, // All selected participants are \"paying\" (owing) their share
+            amount: amount
+          });
+        }
+      });
+    }
+
+    this.api.updateExpenseWithShares(tripId, expenseId, payload, participantShares).subscribe({
       next: () => {
         this.editingExpense = null;
         this.toggleAddExpense();
@@ -651,6 +758,89 @@ export class TripDetailPageComponent implements OnInit {
         this.error = e?.error?.detail || 'Failed to delete expense';
       }
     });
+  }
+
+  /**
+   * Fix all expenses in this trip by re-saving them with correct isPaying data
+   * This is needed to fix legacy expenses that were created with wrong isPaying values
+   */
+  fixAllExpensesData() {
+    if (!this.trip || !this.expenses.length) {
+      alert('No expenses to fix');
+      return;
+    }
+
+    if (!confirm(`This will update all ${this.expenses.length} expenses to fix calculation issues. Continue?`)) {
+      return;
+    }
+
+    console.log('Fixing expenses data...');
+    let fixed = 0;
+    let errors = 0;
+
+    // Process each expense
+    const fixExpense = (index: number) => {
+      if (index >= this.expenses.length) {
+        // Done
+        alert(`Fixed ${fixed} expenses. Errors: ${errors}. Please refresh Total Expenses page.`);
+        this.loadExpenses(String(this.trip!.id));
+        return;
+      }
+
+      const expense = this.expenses[index];
+      
+      // Build participant shares with isPaying=true for all participants who have amounts > 0
+      const participantShares = expense.participantShares
+        .filter(share => Number(share.amount) > 0)
+        .map(share => {
+          // Find userId by matching username
+          const payer = this.payerOptions.find(p => {
+            const labelMatch = p.label.match(/^(.+?)\s*\(\d+\)$/);
+            if (labelMatch) {
+              return labelMatch[1].trim().toLowerCase() === share.username?.trim().toLowerCase();
+            }
+            return false;
+          });
+          
+          return {
+            userId: payer?.id || 0,
+            isPaying: true, // Set to true for all participants with amounts
+            amount: Number(share.amount)
+          };
+        })
+        .filter(share => share.userId > 0); // Remove invalid matches
+
+      if (participantShares.length === 0) {
+        console.warn(`Skipping expense ${expense.id} - no valid participant shares`);
+        errors++;
+        fixExpense(index + 1);
+        return;
+      }
+
+      const payload = {
+        isScanned: expense.isScanned,
+        name: expense.name,
+        description: expense.description || '',
+        payerId: expense.payerId,
+        isEvenDivision: expense.isEvenDivision,
+        totalCost: Number(expense.totalCost)
+      };
+
+      this.api.updateExpenseWithShares(this.trip!.id, expense.id, payload, participantShares).subscribe({
+        next: () => {
+          fixed++;
+          console.log(`Fixed expense ${expense.id} (${fixed}/${this.expenses.length})`);
+          fixExpense(index + 1);
+        },
+        error: (e) => {
+          errors++;
+          console.error(`Failed to fix expense ${expense.id}:`, e);
+          fixExpense(index + 1);
+        }
+      });
+    };
+
+    fixExpense(0);
   }
 
   editTrip() {
