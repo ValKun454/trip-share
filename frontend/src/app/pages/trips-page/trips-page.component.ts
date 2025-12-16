@@ -90,6 +90,7 @@ export class TripsPageComponent implements OnInit {
   friendsLoading = false;
   friendsError: string | null = null;
   showFriendsPicker = false;
+  submitting = false;
 
   form = inject(FormBuilder).group({
     name: ['', [Validators.required, Validators.minLength(2)]],
@@ -265,11 +266,15 @@ export class TripsPageComponent implements OnInit {
       return;
     }
 
+    if (this.submitting) {
+      return;
+    }
+    this.submitting = true;
+
     const val = this.form.value as any;
     const name = (val.name ?? '').toString().trim();
     const description = (val.description ?? '').toString().trim();
 
-    // участники теперь только из dropdown "SELECT FRIENDS"
     let participants: number[] = Array.from(new Set(this.selectedFriendIds));
 
     // dates from form -> "dd.MM.yyyy"
@@ -305,10 +310,12 @@ export class TripsPageComponent implements OnInit {
           console.log('Trip updated successfully:', response);
           this.toggleCreate();
           this.loadTrips();
+          this.submitting = false;
         },
         error: (e) => {
           console.error('Update trip failed', e);
           this.error = e?.error?.detail || 'Failed to update trip';
+          this.submitting = false;
         }
       });
     } else {
@@ -327,12 +334,14 @@ export class TripsPageComponent implements OnInit {
 
           if (!tripId) {
             this.error = 'Trip created but response format unexpected';
+            this.submitting = false;
             return;
           }
 
           if (!participants.length) {
             this.toggleCreate();
             this.loadTrips();
+            this.submitting = false;
             return;
           }
 
@@ -345,23 +354,26 @@ export class TripsPageComponent implements OnInit {
               console.log('All trip invites created');
               this.toggleCreate();
               this.loadTrips();
+              this.submitting = false;
             },
             error: (err) => {
               console.error('Trip created, but sending some invites failed', err);
               this.error = err?.error?.detail || 'Trip created, but failed to send some invites';
-              // Wyjazd już utworzony – formularz nadal ukrywamy i aktualizujemy listę
               this.toggleCreate();
               this.loadTrips();
+              this.submitting = false;
             }
           });
         },
         error: (e) => {
           console.error('Create trip failed', e);
           this.error = e?.error?.detail || 'Failed to create trip';
+          this.submitting = false;
         }
       });
     }
   }
+
 
   loadSummary(tripId: string) {
     this.api.getExpenses(Number(tripId)).subscribe({

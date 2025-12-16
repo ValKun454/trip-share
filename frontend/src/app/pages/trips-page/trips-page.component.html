@@ -77,7 +77,11 @@
 
       <div class="actions">
         <button mat-stroked-button type="button" (click)="toggleCreate()">Cancel</button>
-        <button mat-flat-button color="primary" type="submit" [disabled]="!form.get('name')?.valid">
+        <button
+          mat-flat-button
+          color="primary"
+          type="submit"
+          [disabled]="!form.get('name')?.valid || submitting">
           {{ editingTripId ? 'Update' : 'Create' }}
         </button>
       </div>
