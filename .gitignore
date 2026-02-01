@@ -1,0 +1,21 @@
+# Local/env
+.env
+
+# Virtualenvs
+.venv/
+venv/
+ENV/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# This branch is for tests only
+backend/
+frontend/
+
+# Tests outputs / logs
+tests/*.txt
+tests/*_results.txt
+tests/.venv/
